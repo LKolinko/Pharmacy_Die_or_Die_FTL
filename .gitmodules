@@ -1,0 +1,7 @@
+[submodule "cpp-httplib"]
+        path = BackEnd/cpp-httplib
+        url = https://github.com/yhirose/cpp-httplib
+
+[submodule "cpp-httplib"]
+        path = GenModul/cpp-httplib
+        url = https://github.com/yhirose/cpp-httplib
