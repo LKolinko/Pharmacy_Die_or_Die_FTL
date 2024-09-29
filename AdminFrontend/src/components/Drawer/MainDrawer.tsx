@@ -43,6 +43,11 @@ const MainDrawer: FC<DrawerProps> = (props) => {
                             <ListItemText>Add Item</ListItemText>
                         </ListItemButton>
                     </ListItem>
+                    <ListItem >
+                        <ListItemButton component={Link} to='/InStock' selected={selectedIndex == 'InStock'} onClick={() => handleListItemClick('InStock')}>
+                            <ListItemText>In Stock</ListItemText>
+                        </ListItemButton>
+                    </ListItem>
                 </Box>
             </List>
         </Drawer>

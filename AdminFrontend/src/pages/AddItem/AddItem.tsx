@@ -1,6 +1,4 @@
-import { Button, Stack, Typography, Box, TextField, Alert } from "@mui/material";
-import React, { useState, useRef } from 'react';
-import CheckIcon from '@mui/icons-material/Check';
+import { Button, Stack, Typography, Box, TextField } from "@mui/material";
 
 const AddItem = () => {
     return (
@@ -12,7 +10,7 @@ const AddItem = () => {
             <TextField variant="outlined" id="WholesalePrice" label="Wholesale price"/>
             <TextField variant="outlined" id="DrugGroup" label="Drug group"/>
             <TextField variant="outlined" id="DrugQuantity" label="Drug quantity"/>
-            <Button variant="filled">Add Drug</Button>
+            <Button variant="filled" onClick={() => {}}>Add Drug</Button>
         </Stack>
     );
 }
