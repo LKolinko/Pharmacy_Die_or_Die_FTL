@@ -1,0 +1,8 @@
+services:
+  AdminFront:
+    image: docker-adminfront
+    build:
+      context: ./AdminFrontend
+      dockerfile: Dockerfile
+    ports:
+      - "4242:4242"
