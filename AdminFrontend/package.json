@@ -1,7 +1,6 @@
 {
-  "name": "admin_frontend",
-  "version": "0.1.0",
-  "private": true,
+  "name": "react-material-you-theme",
+  "version": "1.0.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -37,23 +36,5 @@
     "typescript": "^5.0.4",
     "vite": "^4.5.3",
     "vite-plugin-progress": "^0.0.7"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   }
 }

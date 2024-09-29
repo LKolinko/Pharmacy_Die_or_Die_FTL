@@ -1,10 +1,14 @@
-import React from 'react';
-import { Button } from "@mui/material";
+
+import { BrowserRouter } from "react-router-dom";
+import Router from "./pages/router";
 
 const App = () => {
+
   return (
-    <Button variant="outlined" size="large">Admin</Button>
+    <BrowserRouter>
+      <Router />
+    </BrowserRouter>
   );
-}
+};
 
 export default App;
