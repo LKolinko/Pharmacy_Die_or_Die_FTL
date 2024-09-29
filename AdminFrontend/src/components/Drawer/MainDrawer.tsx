@@ -38,6 +38,11 @@ const MainDrawer: FC<DrawerProps> = (props) => {
                             <ListItemText>Color System</ListItemText>
                         </ListItemButton>
                     </ListItem>
+                    <ListItem >
+                        <ListItemButton component={Link} to='/AddItem' selected={selectedIndex == 'AddItem'} onClick={() => handleListItemClick('AddItem')}>
+                            <ListItemText>Add Item</ListItemText>
+                        </ListItemButton>
+                    </ListItem>
                 </Box>
             </List>
         </Drawer>
