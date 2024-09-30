@@ -1,6 +1,5 @@
 #include "cpp-httplib/httplib.h"
-#include <json/json.h>
-#include <json/value.h>
+#include "DataBase.h"
 using namespace httplib;
 
 #define JSON_CONTENT "application/json"
@@ -8,6 +7,7 @@ using namespace httplib;
 
 int main() {
     Server svr;
+    DataBase bd;
 
     svr.Get("/ping", [](const auto& req, auto& res) {
         Json::Value json;
