@@ -3,7 +3,9 @@ project(BackEnd)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(BackEnd main.cpp)
+add_executable(BackEnd main.cpp
+                Drug.h
+                DataBase.h)
 
 include_directories(./cpp-httplib/)
 target_link_libraries(BackEnd jsoncpp)
