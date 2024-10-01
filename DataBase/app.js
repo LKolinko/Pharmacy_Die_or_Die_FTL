@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 mongoose.connect('mongodb://root:31415981@localhost:27017/pharmacyDB?authSource=admin', {
     useNewUrlParser: true,

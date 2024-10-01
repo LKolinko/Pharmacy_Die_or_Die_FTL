@@ -15,9 +15,13 @@ int main() {
         JSON_RESPONSE(json);
     });
     
-    svr.Options("/api", [](const Request& req, Response& res) {
+    svr.Options("/AddDrug", [](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         res.set_header("Access-Control-Allow-Headers", "*");
+    });
+
+    svr.Post("/AddDrug", [](const Request& req, Response& res) {
+
     });
 
     svr.listen("0.0.0.0", 8080);

@@ -1,4 +1,4 @@
-const request = async (num: string, Fbase: string, Sbase: string): Promise<any> => {
+const requestAdd = async (num: string, Fbase: string, Sbase: string): Promise<any> => {
     try {
         const response = await fetch('http://0.0.0.0:1234/api', {
             method: 'POST',
@@ -12,4 +12,4 @@ const request = async (num: string, Fbase: string, Sbase: string): Promise<any> 
         console.log(e);
     }
 }
-export {request};
+export {requestAdd};
