@@ -15,17 +15,14 @@ interface Drug {
 
 const requestAdd = async (drug: Drug): Promise<any> => {
     try {
-        const data = JSON.stringify(drug);
         const response = await fetch('http://0.0.0.0:3000/addDrug', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: data || null
+            body: JSON.stringify(drug) || null
         });
-        const ans = response.json();
-        console.log(ans);
-        return await ans;
+        return await response.json();
     } catch (e) {
         console.log(e);
     }
@@ -74,16 +71,16 @@ const AddItem = () => {
             <TextField variant="outlined" id="RetailPrice" label="Retail price" value={RetailPrice} onChange={handleRetailPriceChange}/>
             <TextField variant="outlined" id="DrugGroup" label="Drug group" value={DrugGroup} onChange={handleDrugGroupChange}/>
             <TextField variant="outlined" id="DrugQuantity" label="Drug quantity" value={DrugQuantity} onChange={handleDrugQuantityChange}/>
-            <Button variant="filled" onClick={() => {
-                requestAdd({ name: Name,
+            <Button variant="filled" onClick={ async () => {
+                const answer = (await requestAdd({ name: Name,
                             group: DrugGroup,
                             type: Type,
                             dose: Dosage,
                             expiryDate: ExpirationDate,
                             quantity: DrugQuantity,
                             wholesalePrice: WholesalePrice,
-                            retailPrice: RetailPrice
-                })
+                            retailPrice: RetailPrice})).answer
+                alert(answer)
             }}>Add Drug</Button>
         </Stack>
     );

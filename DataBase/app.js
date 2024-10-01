@@ -18,7 +18,7 @@ const drugSchema = new mongoose.Schema({
     group: String,
     type: String,
     dose: Number,
-    expiryDate: Date,
+    expiryDate: String,
     quantity: Number,
     wholesalePrice: Number,
     retailPrice: Number
@@ -31,11 +31,13 @@ app.post('/addDrug', async (req, res) => {
 
     try {
         const drug = await Drug.findOne({ name, group, type, dose, expiryDate });
+        const drugs = await Drug.find();
+        console.log(drugs);
 
         if (drug) {
-            drug.quantity += quantity;
+            drug.quantity += Number(quantity);
             await drug.save();
-            res.send('The number of drugs has been updated.');
+            res.send({ answer: "The number of drugs has been updated." });
         } else {
             const newDrug = new Drug({
                 name,
@@ -49,25 +51,24 @@ app.post('/addDrug', async (req, res) => {
             });
 
             await newDrug.save();
-            res.send('New medicine added.');
+            res.send({ answer: 'New medicine added.' });
         }
     } catch (err) {
-        res.status(500).send('Error adding medicine: ' + err.message);
+        res.status(500).send({ answer: 'Error adding medicine: ' + err.message });
     }
 });
 
 app.delete('/deleteDrug', async (req, res) => {
     const { name, group, type, dose, expiryDate } = req.body;
-
     try {
         const result = await Drug.deleteOne({ name, group, type, dose, expiryDate });
         if (result.deletedCount > 0) {
-            res.send('The medicine has been removed.');
+            res.send({ answer: 'The medicine has been removed.' });
         } else {
-            res.status(404).send('No cure found.');
+            res.status(404).send({ answer: 'No cure found.' });
         }
     } catch (err) {
-        res.status(500).send('Error when deleting medication: ' + err.message);
+        res.status(500).send({ answer: 'Error when deleting medication: ' + err.message });
     }
 });
 
@@ -76,7 +77,7 @@ app.get('/getAllDrugs', async (req, res) => {
         const drugs = await Drug.find();
         res.json(drugs);
     } catch (err) {
-        res.status(500).send('Error while retrieving a list of medications: ' + err.message);
+        res.status(500).send({ answer: 'Error while retrieving a list of medications: ' + err.message });
     }
 });
 
