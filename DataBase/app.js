@@ -31,8 +31,6 @@ app.post('/addDrug', async (req, res) => {
 
     try {
         const drug = await Drug.findOne({ name, group, type, dose, expiryDate });
-        const drugs = await Drug.find();
-        console.log(drugs);
 
         if (drug) {
             drug.quantity += Number(quantity);
@@ -49,10 +47,9 @@ app.post('/addDrug', async (req, res) => {
                 wholesalePrice,
                 retailPrice
             });
-
-            await newDrug.save();
-            res.send({ answer: 'New medicine added.' });
         }
+        const drugs = await Drug.find();
+        console.log(drugs);
     } catch (err) {
         res.status(500).send({ answer: 'Error adding medicine: ' + err.message });
     }
