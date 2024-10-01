@@ -35,7 +35,7 @@ app.post('/addDrug', async (req, res) => {
         if (drug) {
             drug.quantity += quantity;
             await drug.save();
-            res.send('Количество лекарства обновлено.');
+            res.send('The number of drugs has been updated.');
         } else {
             const newDrug = new Drug({
                 name,
@@ -49,10 +49,10 @@ app.post('/addDrug', async (req, res) => {
             });
 
             await newDrug.save();
-            res.send('Новое лекарство добавлено.');
+            res.send('New medicine added.');
         }
     } catch (err) {
-        res.status(500).send('Ошибка при добавлении лекарства: ' + err.message);
+        res.status(500).send('Error adding medicine: ' + err.message);
     }
 });
 
@@ -62,12 +62,12 @@ app.delete('/deleteDrug', async (req, res) => {
     try {
         const result = await Drug.deleteOne({ name, group, type, dose, expiryDate });
         if (result.deletedCount > 0) {
-            res.send('Лекарство удалено.');
+            res.send('The medicine has been removed.');
         } else {
-            res.status(404).send('Лекарство не найдено.');
+            res.status(404).send('No cure found.');
         }
     } catch (err) {
-        res.status(500).send('Ошибка при удалении лекарства: ' + err.message);
+        res.status(500).send('Error when deleting medication: ' + err.message);
     }
 });
 
@@ -76,7 +76,7 @@ app.get('/getAllDrugs', async (req, res) => {
         const drugs = await Drug.find();
         res.json(drugs);
     } catch (err) {
-        res.status(500).send('Ошибка при получении списка лекарств: ' + err.message);
+        res.status(500).send('Error while retrieving a list of medications: ' + err.message);
     }
 });
 

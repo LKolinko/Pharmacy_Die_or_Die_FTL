@@ -15,16 +15,17 @@ interface Drug {
 
 const requestAdd = async (drug: Drug): Promise<any> => {
     try {
-        const e = JSON.stringify(drug);
+        const data = JSON.stringify(drug);
         const response = await fetch('http://0.0.0.0:3000/addDrug', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: e || null
+            body: data || null
         });
-        console.log(e.toString());
-        return await response.json();
+        const ans = response.json();
+        console.log(ans);
+        return await ans;
     } catch (e) {
         console.log(e);
     }
