@@ -12,13 +12,13 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: 31415981
 
-  #AdminFront:
-  #  image: docker-adminfront
-  #  build:
-  #    context: ./AdminFrontend
-  #    dockerfile: Dockerfile
-  #  ports:
-  #    - "4242:4242"
+  AdminFront:
+    image: docker-adminfront
+    build:
+      context: ./AdminFrontend
+      dockerfile: Dockerfile
+    ports:
+      - "4242:4242"
 
   #BackEnd:
   #  image: docker-backend

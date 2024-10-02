@@ -56,10 +56,14 @@ app.post('/addDrug', async (req, res) => {
 });
 
 app.delete('/deleteDrug', async (req, res) => {
-    const { name, group, type, dose, expiryDate } = req.body;
+    const { name, group, type, dose, expiryDate, quantity } = req.body;
     try {
-        const result = await Drug.deleteOne({ name, group, type, dose, expiryDate });
-        if (result.deletedCount > 0) {
+        const result = await Drug.findOne({ name, group, type, dose, expiryDate });
+        if (result.quantity > quantity) {
+            result.quantity -= Number(quantity);
+            res.send({ answer: 'The number of drugs has been updated.' });
+        } else if (result.quantity == quantity) {
+            Drug.deleteOne({ name, group, type, dose, expiryDate });
             res.send({ answer: 'The medicine has been removed.' });
         } else {
             res.status(404).send({ answer: 'No cure found.' });
