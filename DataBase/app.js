@@ -28,7 +28,6 @@ const Drug = mongoose.model('Drug', drugSchema);
 
 app.post('/addDrug', async (req, res) => {
     const { name, group, type, dose, expiryDate, quantity, wholesalePrice, retailPrice } = req.body;
-
     try {
         const drug = await Drug.findOne({ name, group, type, dose, expiryDate });
 
@@ -47,6 +46,8 @@ app.post('/addDrug', async (req, res) => {
                 wholesalePrice,
                 retailPrice
             });
+            await newDrug.save();
+            res.send({ answer: 'New medicine added.' });
         }
         const drugs = await Drug.find();
         console.log(drugs);
@@ -74,6 +75,7 @@ app.delete('/deleteDrug', async (req, res) => {
 });
 
 app.get('/getAllDrugs', async (req, res) => {
+    console.log("YES")
     try {
         const drugs = await Drug.find();
         res.json(drugs);

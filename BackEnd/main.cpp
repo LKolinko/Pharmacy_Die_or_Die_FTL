@@ -1,6 +1,10 @@
 #include "cpp-httplib/httplib.h"
+#include <iostream>
 #include <json/json.h>
 #include <json/value.h>
+#include <bsoncxx/json.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
 using namespace httplib;
 
 #define JSON_CONTENT "application/json"
@@ -15,13 +19,19 @@ int main() {
         JSON_RESPONSE(json);
     });
     
-    svr.Options("/AddDrug", [](const Request& req, Response& res) {
+    svr.Options("/GetAllDrug", [](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         res.set_header("Access-Control-Allow-Headers", "*");
     });
 
-    svr.Post("/AddDrug", [](const Request& req, Response& res) {
+    svr.Get("/GetAllDrug", [](const Request& req, Response& res) {
+        Json::Value json;
 
+        httplib::Client cli("http://0.0.0.0", 3000);
+        auto AllDrugs = cli.Get("/getAllDrugs");
+
+        json["response"] = AllDrugs == nullptr;
+        JSON_RESPONSE(json);
     });
 
     svr.listen("0.0.0.0", 8080);
