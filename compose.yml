@@ -1,4 +1,13 @@
 services:
+
+  AdminFrontend:
+    image: docker-adminfront
+    build:
+      context: ./AdminFrontend
+      dockerfile: Dockerfile
+    ports:
+     - "4242:4242"
+
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -13,8 +22,6 @@ services:
     build:
       context: ./BackEnd
       dockerfile: Dockerfile
-    depends_on:
-      - mongodb
     environment:
       - MONGO_URI=mongodb://mongodb:27017
     ports:

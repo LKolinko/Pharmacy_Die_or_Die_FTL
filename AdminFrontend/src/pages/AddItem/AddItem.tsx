@@ -9,19 +9,19 @@ interface Drug {
     dose: String,
     expiryDate: String,
     quantity: String,
-    wholesalePrice: String,
     retailPrice: String
 }
 
 const requestAdd = async (drug: Drug): Promise<any> => {
     try {
-        const response = await fetch('http://0.0.0.0:3000/addDrug', {
+        const response = await fetch('http://0.0.0.0:8080/AddItem', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(drug) || null
         });
+        console.log(JSON.stringify(drug));
         return await response.json();
     } catch (e) {
         console.log(e);
@@ -49,9 +49,6 @@ const AddItem = () => {
     const handleExpirationDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setExpirationDate(event.target.value);
     }
-    const handleWholesalePriceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setWholesalePrice(event.target.value);
-    }
     const handleRetailPriceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRetailPrice(event.target.value);
     }
@@ -67,7 +64,6 @@ const AddItem = () => {
             <TextField variant="outlined" id="Dosage" label="Dosage" value={Dosage} onChange={handleDosageChange}/>
             <TextField variant="outlined" id="Type" label="Type" value={Type} onChange={handleTypeChange}/>
             <TextField variant="outlined" id="ExpirationDate" label="Expiration date" value={ExpirationDate} onChange={handleExpirationDateChange}/>
-            <TextField variant="outlined" id="WholesalePrice" label="Wholesale price" value={WholesalePrice} onChange={handleWholesalePriceChange}/>
             <TextField variant="outlined" id="RetailPrice" label="Retail price" value={RetailPrice} onChange={handleRetailPriceChange}/>
             <TextField variant="outlined" id="DrugGroup" label="Drug group" value={DrugGroup} onChange={handleDrugGroupChange}/>
             <TextField variant="outlined" id="DrugQuantity" label="Drug quantity" value={DrugQuantity} onChange={handleDrugQuantityChange}/>
@@ -78,7 +74,6 @@ const AddItem = () => {
                             dose: Dosage,
                             expiryDate: ExpirationDate,
                             quantity: DrugQuantity,
-                            wholesalePrice: WholesalePrice,
                             retailPrice: RetailPrice})).answer
                 alert(answer)
             }}>Add Drug</Button>
