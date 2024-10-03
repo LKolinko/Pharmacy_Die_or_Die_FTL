@@ -27,10 +27,7 @@ int main() {
     svr.Get("/GetAllDrug", [](const Request& req, Response& res) {
         Json::Value json;
 
-        httplib::Client cli("http://0.0.0.0", 3000);
-        auto AllDrugs = cli.Get("/getAllDrugs");
-
-        json["response"] = AllDrugs == nullptr;
+        json["response"] = "OK";
         JSON_RESPONSE(json);
     });
 
