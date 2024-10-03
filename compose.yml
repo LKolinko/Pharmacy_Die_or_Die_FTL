@@ -1,21 +1,22 @@
 services:
-  mongo:
+  mongodb:
     image: mongo:latest
-    container_name: pharmacy_mongo
+    container_name: mongodb
     restart: always
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: 31415981
 
   BackEnd:
     image: docker-backend
     build:
       context: ./BackEnd
       dockerfile: Dockerfile
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
     ports:
       - "8080:8080"
 
