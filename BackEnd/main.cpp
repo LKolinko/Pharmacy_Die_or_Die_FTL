@@ -1,11 +1,16 @@
 #include "cpp-httplib/httplib.h"
 #include <iostream>
+
+#include <bsoncxx/builder/stream/document.hpp>
+
 #include "Drug.h"
 
 using namespace httplib;
 
 #define JSON_CONTENT "application/json"
 #define JSON_RESPONSE(json) res.set_content(json.toStyledString(), "application/json")
+
+int64_t generatin_time = 0;
 
 int main() {
     Server svr;
@@ -36,19 +41,13 @@ int main() {
         JSON_RESPONSE(json);
     });
 
-    svr.Get("/GetAllDrug", [&Drugs](const Request& req, Response& res) {
+    svr.Get("/GetAllDrugs", [&Drugs](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json;
-
         auto cursor_all = Drugs.find({});
-        std::cout << "collection " << Drugs.name()
-                << " contains these documents:" << std::endl;
         for (auto doc : cursor_all) {
-            std::cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << std::endl;
+            json.append(bsoncxx::to_json(doc));
         }
-        std::cout << std::endl;
-
-        json["response"] = "OK";
         JSON_RESPONSE(json);
     });
 
@@ -57,17 +56,23 @@ int main() {
         Json::Value json;
         Json::Reader reader;
         reader.parse(req.body, json);
-
         if (json.empty()) {
             return;
         }
-
         Drug e(json);
-        auto insert_one_result = Drugs.insert_one(e.ToBson());
-
-        std::cout << e << '\n';
-
-        json["answer"] = "OK";
+        auto result = Drugs.find_one(e.ToFindBson());
+        if (!result) {
+            json["answer"] = "New Drug added";
+            auto insert_one_result = Drugs.insert_one(e.ToBson());
+        } else {
+            auto doc = result->view();
+            bsoncxx::builder::stream::document update_builder;
+            update_builder << "$inc" << bsoncxx::builder::stream::open_document
+               << "quantity" << e.quantity_ 
+               << bsoncxx::builder::stream::close_document;
+            auto update_one_result = Drugs.update_one(doc, update_builder.view());
+            json["answer"] = "number of drugs updated";
+        }
         JSON_RESPONSE(json);
     });
 
