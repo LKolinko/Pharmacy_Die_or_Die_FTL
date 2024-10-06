@@ -7,13 +7,12 @@
 
 using namespace httplib;
 
-
 #define JSON_CONTENT "application/json"
 #define JSON_RESPONSE(json) res.set_content(json.toStyledString(), "application/json")
 
-int64_t generatin_time = 0;
-
 int main() {
+    int64_t generatin_time = 0;
+
     Server svr;
     mongocxx::instance instance{};
     
@@ -47,7 +46,6 @@ int main() {
 
     svr.Get("/GetAllDrugs", [&drugs](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
-        std::cerr << "GetAllDrugs" << '\n';
         Json::Value json(Json::arrayValue);
         auto cursor_all = drugs.find({});
         std::vector<Drug> d;
@@ -70,7 +68,6 @@ int main() {
 
     svr.Post("/AddItem", [&drugs](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
-        std::cerr << "AddItem" << '\n';
         Json::Value json;
         Json::Reader reader;
         reader.parse(req.body, json);

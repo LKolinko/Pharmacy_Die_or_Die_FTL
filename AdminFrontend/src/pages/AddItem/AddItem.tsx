@@ -1,4 +1,3 @@
-import { QrCode } from "@mui/icons-material";
 import { Button, Stack, Typography, Box, TextField } from "@mui/material";
 import { useState } from "react";
 

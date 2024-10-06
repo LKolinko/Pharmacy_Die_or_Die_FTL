@@ -1,6 +1,6 @@
 import { List, ListItem, ListSubheader, ListItemText, Stack } from "@mui/material"
-import {SxProps, useTheme} from "@mui/material"
-
+import {SxProps, useTheme } from "@mui/material"
+import {useEffect, useState} from "react"
 const useStyles = () => {
     const theme = useTheme();
     const palette = theme.palette;
@@ -41,27 +41,73 @@ const useStyles = () => {
 }
 
 interface Drug {
-    name: string
-    dosage: string
-    quantity: string
-    expiration_date: string
-    retail_price: string
+    name: String,
+    group: String,
+    type: String,
+    dosage: Number,
+    expiration_date: String,
+    quantity: Number,
+    retail_price: String
 }
 
 interface DrugTypeGroup {
-    name: string
+    name: String
     data: Drug[]
 }
 
 interface DrugGroup {
-    name: string
+    name: String
     list: DrugTypeGroup[]
 }
 
-const InStock = () => {
-    const a: DrugTypeGroup = { name: "таблетка", data: [ {name: "Нурафен", dosage: "1.5", quantity: "100", expiration_date: "09.01.2024", retail_price: "90" } ] };
-    const Items: DrugGroup[] = [{ name: "Grup1", list: [ a ] }, { name: "Grup2", list: [ a ] }]
+const requestGetAll = async () => {
+    try {
+        const response = await (await fetch('http://0.0.0.0:8080/GetAllDrugs', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })).json();
+        return response as Drug[];
+    } catch (e) {
+        console.log(e);
+    }
+}
 
+
+const InStock = () => {
+    const [Items, setItems] = useState<DrugGroup[]>([]);
+    useEffect(() => {
+        const GetData = async () => {
+            const answer = await requestGetAll();
+            if (answer != undefined) {
+                const mp = new Map<String, Map<String, Drug[]>>()
+                answer.map(element => {
+                    if (mp.has(element.group)) {
+                        if (mp.get(element.group)?.has(element.type)) {
+                            mp.get(element.group)?.get(element.type)?.push(element)
+                        } else {
+                            mp.get(element.group)?.set(element.type, [ element ])
+                        }
+                    } else {
+                        const newMp = new Map<String, Drug[]>()
+                        newMp.set(element.type, [ element ])
+                        mp.set(element.group, newMp)
+                    }
+                });
+                const res: DrugGroup[] = [];
+                for (let[key, value] of mp) {
+                    const drug_type_group: DrugTypeGroup[] = []
+                    for (let[gkey, gvalue] of value) {
+                        drug_type_group.push({ name: gkey, data: gvalue })
+                    }
+                    res.push({ name: key, list: drug_type_group })
+                }
+                setItems(res);
+            }
+        }
+        GetData()
+    }, []);
     return (
         <List sx={useStyles().list}>
         {Items.map((drug_group) => (
