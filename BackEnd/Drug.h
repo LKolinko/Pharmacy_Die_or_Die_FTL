@@ -22,31 +22,45 @@ class Drug {
 public:
     Drug() = default;
 
-    Drug(Json::Value json) {
-        name_ = json["name"].asString();
-        group_ = json["group"].asString();
-        type_ = json["type"].asString();
-        dosage_ = json["dose"].asString();
-        expiration_date_ = json["expiryDate"].asString();
-        quantity_ = std::stoi(json["quantity"].asString());
-        retail_price_ = json["retailPrice"].asString();
+    Drug(Json::Value json) : Drug(bsoncxx::from_json(json.toStyledString())) {}
+
+    Drug(bsoncxx::v_noabi::document::view bson) {
+        name_ = bson["name"].get_string().value;
+        group_ = bson["group"].get_string().value;
+        type_ = bson["type"].get_string().value;
+        dosage_ = bson["dosage"].get_int32();
+        expiration_date_ = bson["expiration_date"].get_string().value;
+        quantity_ = bson["quantity"].get_int32();
+        retail_price_ = bson["retail_price"].get_string().value;
     }
 
     Drug(std::string name, std::string group, std::string type, 
-    std::string dosage, std::string expiration_date, int64_t quantity, std::string retail_price)
+    int64_t dosage, std::string expiration_date, int64_t quantity, std::string retail_price)
     : dosage_(dosage), quantity_(quantity),
     name_(name), type_(type), group_(group),
     retail_price_(retail_price),
     expiration_date_(expiration_date_) {}
+
+    Json::Value ToJson() {
+        Json::Value json;
+        json["name"] = name_;
+        json["group"] = group_;
+        json["type"] = type_;
+        json["dosage"] = dosage_;
+        json["expiration_date"] = expiration_date_;
+        json["quantity"] = quantity_;
+        json["retail_price"] = retail_price_;
+        return json;
+    }
 
     bsoncxx::document::value ToBson() {
         auto doc_value = make_document(
             kvp("name", name_),
             kvp("group", group_),
             kvp("type", type_),
-            kvp("dosage", std::stoi(dosage_)),
+            kvp("dosage", dosage_),
             kvp("expiration_date", expiration_date_),
-            kvp("retail_price", std::stoi(retail_price_)),
+            kvp("retail_price", retail_price_),
             kvp("quantity", quantity_)
         );
         return doc_value;
@@ -57,9 +71,9 @@ public:
             kvp("name", name_),
             kvp("group", group_),
             kvp("type", type_),
-            kvp("dosage", std::stoi(dosage_)),
+            kvp("dosage", dosage_),
             kvp("expiration_date", expiration_date_),
-            kvp("retail_price", std::stoi(retail_price_))
+            kvp("retail_price", retail_price_)
         );
         return doc_value;
     }
@@ -67,10 +81,10 @@ public:
     friend std::istream& operator>>(std::istream& in, Drug& drug); 
     friend std::ostream& operator<<(std::ostream& out, Drug& drug);
 
-    std::string dosage_, expiration_date_;
+    std::string expiration_date_;
     std::string name_, type_, group_;
     std::string retail_price_;
-    int64_t quantity_;
+    int32_t quantity_, dosage_;
 };
 
 std::istream& operator>>(std::istream& in, Drug& drug) {

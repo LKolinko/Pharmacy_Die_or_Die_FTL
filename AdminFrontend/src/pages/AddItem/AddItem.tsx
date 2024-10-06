@@ -6,10 +6,10 @@ interface Drug {
     name: String,
     group: String,
     type: String,
-    dose: String,
-    expiryDate: String,
-    quantity: String,
-    retailPrice: String
+    dosage: Number,
+    expiration_date: String,
+    quantity: Number,
+    retail_price: String
 }
 
 const requestAdd = async (drug: Drug): Promise<any> => {
@@ -33,7 +33,6 @@ const AddItem = () => {
     const [Dosage, setDosage] = useState('')
     const [Type, setType] = useState('')
     const [ExpirationDate, setExpirationDate] = useState('')
-    const [WholesalePrice, setWholesalePrice] = useState('')
     const [RetailPrice, setRetailPrice] = useState('')
     const [DrugGroup, setDrugGroup] = useState('')
     const [DrugQuantity, setDrugQuantity] = useState('')
@@ -71,10 +70,10 @@ const AddItem = () => {
                 const answer = (await requestAdd({ name: Name,
                             group: DrugGroup,
                             type: Type,
-                            dose: Dosage,
-                            expiryDate: ExpirationDate,
-                            quantity: DrugQuantity,
-                            retailPrice: RetailPrice})).answer
+                            dosage: Number(Dosage),
+                            expiration_date: ExpirationDate,
+                            quantity: Number(DrugQuantity),
+                            retail_price: RetailPrice})).answer
                 alert(answer)
             }}>Add Drug</Button>
         </Stack>
