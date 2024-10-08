@@ -23,7 +23,11 @@ int main() {
     }
 
     mongocxx::client client{mongocxx::uri{uri_string}};
-
+    try {
+        auto session = client.start_session();
+    } catch (std::runtime_error& e) {
+        std::cerr << e.what() << '\n';
+    }
     auto db = client["mydb"];
     auto drugs = db["drugs"];
     auto dlients = db["clients"];
@@ -47,23 +51,27 @@ int main() {
     svr.Get("/GetAllDrugs", [&drugs](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json(Json::arrayValue);
-        auto cursor_all = drugs.find({});
-        std::vector<Drug> d;
-        for (auto doc : cursor_all) {
-            try {
+        try {
+            auto cursor_all = drugs.find({});
+            std::vector<Drug> d;
+            for (auto doc : cursor_all) {
                 try {
-                    d.push_back(Drug(doc));
-                } catch (std::runtime_error& e) {
-                    std::cerr << e.what() << '\n';
+                    try {
+                        d.push_back(Drug(doc));
+                    } catch (std::runtime_error& e) {
+                        std::cerr << e.what() << '\n';
+                    }
+                } catch(...) {
+                    std::cerr << "Oh no" << '\n';
                 }
-            } catch(...) {
-                std::cerr << "Oh no" << '\n';
             }
+            for (auto& u : d) {
+                json.append(u.ToJson());
+            }
+            JSON_RESPONSE(json);
+        } catch (std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
         }
-        for (auto& u : d) {
-            json.append(u.ToJson());
-        }
-        JSON_RESPONSE(json);
     });
 
     svr.Post("/AddItem", [&drugs](const Request& req, Response& res) {
@@ -78,7 +86,6 @@ int main() {
         try {
             try {
                 e = Drug(json);
-                std::cerr << e << '\n';
             } catch (std::runtime_error& e) {
             std::cerr << e.what() << '\n';
             }

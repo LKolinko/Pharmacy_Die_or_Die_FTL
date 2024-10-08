@@ -9,21 +9,38 @@ services:
      - "4242:4242"
 
   mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    restart: always
+    image: mongodb-replicaset
+    build:
+      context: ./mongodb
+    hostname: mongodb
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-
+    environment:
+      - MONGODB_HOSTNAME=mongodb
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+      - ADMIN_DATABASE=admin
+      - COMMON_DATABASE=mydb
+      - COMMON_USERNAME=test
+      - COMMON_PASSWORD=test
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh -u $$COMMON_USERNAME -p $$COMMON_PASSWORD \"mongodb://$${MONGODB_HOSTNAME}\" || exit 1"]
+      interval: 20s
+      timeout: 2s
+      retries: 3
+    
   BackEnd:
+    depends_on:
+        mongodb:
+          condition: service_healthy
     image: docker-backend
     build:
       context: ./BackEnd
       dockerfile: Dockerfile
     environment:
-      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_URI=mongodb://test:test@mongodb:27017
     ports:
       - "8080:8080"
 
