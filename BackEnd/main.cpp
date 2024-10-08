@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <bsoncxx/builder/stream/document.hpp>
+#include <mongocxx/exception/operation_exception.hpp>
 
 #include "Drug.h"
 
@@ -23,11 +24,7 @@ int main() {
     }
 
     mongocxx::client client{mongocxx::uri{uri_string}};
-    try {
-        auto session = client.start_session();
-    } catch (std::runtime_error& e) {
-        std::cerr << e.what() << '\n';
-    }
+
     auto db = client["mydb"];
     auto drugs = db["drugs"];
     auto dlients = db["clients"];
@@ -48,33 +45,29 @@ int main() {
         JSON_RESPONSE(json);
     });
 
-    svr.Get("/GetAllDrugs", [&drugs](const Request& req, Response& res) {
+    svr.Get("/GetAllDrugs", [&drugs, &client](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json(Json::arrayValue);
+        auto session = client.start_session();
         try {
+            session.start_transaction();
             auto cursor_all = drugs.find({});
             std::vector<Drug> d;
             for (auto doc : cursor_all) {
-                try {
-                    try {
-                        d.push_back(Drug(doc));
-                    } catch (std::runtime_error& e) {
-                        std::cerr << e.what() << '\n';
-                    }
-                } catch(...) {
-                    std::cerr << "Oh no" << '\n';
-                }
+                d.push_back(Drug(doc));
             }
             for (auto& u : d) {
                 json.append(u.ToJson());
             }
+            session.commit_transaction();
             JSON_RESPONSE(json);
-        } catch (std::runtime_error& e) {
+        } catch (const mongocxx::operation_exception& e) {
+            session.abort_transaction();
             std::cerr << e.what() << '\n';
         }
     });
 
-    svr.Post("/AddItem", [&drugs](const Request& req, Response& res) {
+    svr.Post("/AddItem", [&drugs, &client](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json;
         Json::Reader reader;
@@ -82,30 +75,27 @@ int main() {
         if (json.empty()) {
             return;
         }
-        Drug e;
+        auto session = client.start_session();
         try {
-            try {
-                e = Drug(json);
-            } catch (std::runtime_error& e) {
-            std::cerr << e.what() << '\n';
+            Drug e(json);
+            auto result = drugs.find_one(e.ToFindBson());
+            if (!result) {
+                json["answer"] = "New Drug added";
+                auto insert_one_result = drugs.insert_one(e.ToBson());
+            } else {
+                auto doc = result->view();
+                bsoncxx::builder::stream::document update_builder;
+                update_builder << "$inc" << bsoncxx::builder::stream::open_document
+                << "quantity" << e.quantity_ 
+                << bsoncxx::builder::stream::close_document;
+                auto update_one_result = drugs.update_one(doc, update_builder.view());
+                json["answer"] = "number of drugs updated";
             }
-        } catch (...) {
-            std::cerr << "Oh, no" << '\n';
+            JSON_RESPONSE(json);
+        } catch (const mongocxx::operation_exception& e) {
+            session.abort_transaction();
+            std::cerr << e.what() << '\n';
         }
-        auto result = drugs.find_one(e.ToFindBson());
-        if (!result) {
-            json["answer"] = "New Drug added";
-            auto insert_one_result = drugs.insert_one(e.ToBson());
-        } else {
-            auto doc = result->view();
-            bsoncxx::builder::stream::document update_builder;
-            update_builder << "$inc" << bsoncxx::builder::stream::open_document
-               << "quantity" << e.quantity_ 
-               << bsoncxx::builder::stream::close_document;
-            auto update_one_result = drugs.update_one(doc, update_builder.view());
-            json["answer"] = "number of drugs updated";
-        }
-        JSON_RESPONSE(json);
     });
 
     svr.listen("0.0.0.0", 8080);
