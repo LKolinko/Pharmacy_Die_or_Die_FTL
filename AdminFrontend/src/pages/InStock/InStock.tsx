@@ -8,8 +8,7 @@ const useStyles = () => {
         list: {
             backgroundColor: palette.surface.main,
             width: "100%",
-            height: "500px",
-            overflow: "scroll",
+            height: "100%",
             display: "flex",
             flexDirection: "column",
             borderRadius: "0px",

@@ -26,7 +26,7 @@ public:
 
     Drug(Json::Value json) : Drug(bsoncxx::from_json(json.toStyledString())) {}
 
-    Drug(bsoncxx::v_noabi::document::view   bson) {
+    Drug(bsoncxx::v_noabi::document::view bson) {
         name_ = bson["name"].get_string().value;
         group_ = bson["group"].get_string().value;
         type_ = bson["type"].get_string().value;
@@ -52,6 +52,7 @@ public:
         json["expiration_date"] = expiration_date_;
         json["quantity"] = quantity_;
         json["retail_price"] = retail_price_;
+        json["discounted"] = discounted;
         return json;
     }
 
@@ -85,6 +86,7 @@ public:
             return false;
         }
         if (expiration_date_ - current_time <= 30) {
+            discounted = true;
             retail_price_ /= 2;
         }
         return true;
@@ -96,6 +98,7 @@ public:
     int32_t expiration_date_;
     std::string name_, type_, group_;
     int32_t retail_price_;
+    bool discounted = false;
     int32_t quantity_, dosage_;
 };
 

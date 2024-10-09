@@ -22,6 +22,21 @@ const requestNewGeneration = async (data: GenerationData): Promise<any> => {
     }
 }
 
+const requestNextDay = async (num: Number): Promise<any> => {
+    try {
+        const response = await fetch('http://0.0.0.0:5252/NextDay', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(num) || null
+        });
+        return await response.json();
+    } catch (e) {
+        console.log(e);
+    }
+}
+
 const Generation = () => {
     const [days, setdays] = useState('')
     const [drugs, setdrugs] = useState('')
@@ -48,6 +63,10 @@ const Generation = () => {
                 })).answer
                 alert(answer)
             }}>New Generation</Button>
+            <Button variant="filled" onClick={ async () => {
+                const answer = (await requestNextDay(1)).answer
+                alert(answer)
+            }}>Next Day</Button>
         </Stack>
     )
 }
