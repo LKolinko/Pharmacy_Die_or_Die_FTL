@@ -5,7 +5,7 @@
 #include <mongocxx/exception/operation_exception.hpp>
 #include <mutex>
 
-#include "Drug.h"
+#include "Dealer.h"
 
 using namespace httplib;
 
@@ -120,6 +120,9 @@ int main() {
             drugs.delete_many({});
             dilers.delete_many({});
             orders.delete_many({});
+            for (auto u : json["drugs"]) {
+                drugs.insert_one(Drug(u).ToBson());
+            }
             session.commit_transaction();
         } catch (const std::runtime_error& e) {
             session.abort_transaction();
