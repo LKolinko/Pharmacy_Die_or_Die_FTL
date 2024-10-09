@@ -9,7 +9,7 @@ ADD . /app/build
 WORKDIR /app/build
 
 RUN cmake .
-RUN cmake --build .
+RUN cmake --build ./
 
 FROM alpine:latest
 

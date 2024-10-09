@@ -44,5 +44,13 @@ services:
     ports:
       - "8080:8080"
 
+  Getmodul:
+    image: docker-genmodul
+    build:
+      context: ./GenModul
+      dockerfile: Dockerfile
+    ports:
+      - "5252:5252"
+
 volumes:
   mongo_data:

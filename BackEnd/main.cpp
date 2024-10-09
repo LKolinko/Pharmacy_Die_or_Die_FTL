@@ -76,7 +76,7 @@ int main() {
         res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json;
         Json::Reader reader;
-        reader.parse(req.body, json);
+        reader.parse(req.body, json);        
         if (json.empty()) {
             return;
         }
@@ -123,7 +123,9 @@ int main() {
             for (auto u : json["drugs"]) {
                 drugs.insert_one(Drug(u).ToBson());
             }
-            session.commit_transaction();
+            session.commit_transaction();    
+            json["response"] = "OK";
+            JSON_RESPONSE(json);
         } catch (const std::runtime_error& e) {
             session.abort_transaction();
             std::cerr << e.what() << '\n';
