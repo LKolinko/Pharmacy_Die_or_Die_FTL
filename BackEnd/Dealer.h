@@ -51,6 +51,7 @@ public:
         );
         return doc_value;
     }
+    
     bsoncxx::document::value ToBson() {
         bsoncxx::builder::stream::array drugs_bson;
         for (auto& drug : drugs_) {

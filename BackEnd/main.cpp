@@ -74,12 +74,12 @@ int main() {
     svr.Post("/AddItem", [&drugs, &client, &data_base_mutex](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         res.set_header("Access-Control-Allow-Origin", "*");
-        Json::Value json;
-        Json::Reader reader;
-        reader.parse(req.body, json);        
-        if (json.empty()) {
-            return;
-        }
+            Json::Value json;
+            Json::Reader reader;
+            reader.parse(req.body, json);        
+            if (json.empty()) {
+                return;
+            }
         auto session = client.start_session();
         try {
             session.start_transaction();
@@ -105,11 +105,11 @@ int main() {
         }
     });
 
-    svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders](const Request& req, Response& res) {
+    svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders, &generatin_time](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
-        res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json;
         Json::Reader reader;
+        generatin_time = 0;
         reader.parse(req.body, json);
         if (json.empty()) {
             return;
@@ -130,6 +130,13 @@ int main() {
             session.abort_transaction();
             std::cerr << e.what() << '\n';
         }
+    });
+
+    svr.Post("/NextDay", [&generatin_time](const Request& req, Response& res) {
+        ++generatin_time;
+        Json::Value json;
+        json["response"] = "OK";
+        JSON_RESPONSE(json);
     });
 
     svr.listen("0.0.0.0", 8080);
