@@ -45,7 +45,7 @@ interface Drug {
     group: String,
     type: String,
     dosage: Number,
-    expiration_date: String,
+    expiration_date: Date,
     quantity: Number,
     retail_price: String
 }

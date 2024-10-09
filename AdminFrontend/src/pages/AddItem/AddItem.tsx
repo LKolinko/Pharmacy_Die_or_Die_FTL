@@ -6,9 +6,9 @@ interface Drug {
     group: String,
     type: String,
     dosage: Number,
-    expiration_date: String,
+    expiration_date: Number,
     quantity: Number,
-    retail_price: String
+    retail_price: Number
 }
 
 const requestAdd = async (drug: Drug): Promise<any> => {
@@ -59,20 +59,20 @@ const AddItem = () => {
     return (
         <Stack spacing={3}>
             <TextField variant="outlined" id="Name" label="Drug name" value={Name} onChange={handleNameChange}/>
-            <TextField variant="outlined" id="Dosage" label="Dosage" value={Dosage} onChange={handleDosageChange}/>
+            <TextField variant="outlined" id="Dosage" label="Dosage" value={Dosage} type="number" onChange={handleDosageChange}/>
             <TextField variant="outlined" id="Type" label="Type" value={Type} onChange={handleTypeChange}/>
-            <TextField variant="outlined" id="ExpirationDate" label="Expiration date" value={ExpirationDate} onChange={handleExpirationDateChange}/>
-            <TextField variant="outlined" id="RetailPrice" label="Retail price" value={RetailPrice} onChange={handleRetailPriceChange}/>
+            <TextField variant="outlined" id="ExpirationDate" type="date" value={ExpirationDate} onChange={handleExpirationDateChange}/>
+            <TextField variant="outlined" id="RetailPrice" label="Retail price" value={RetailPrice} type="number" onChange={handleRetailPriceChange}/>
             <TextField variant="outlined" id="DrugGroup" label="Drug group" value={DrugGroup} onChange={handleDrugGroupChange}/>
-            <TextField variant="outlined" id="DrugQuantity" label="Drug quantity" value={DrugQuantity} onChange={handleDrugQuantityChange}/>
+            <TextField variant="outlined" id="DrugQuantity" label="Drug quantity" value={DrugQuantity} type="number" onChange={handleDrugQuantityChange}/>
             <Button variant="filled" onClick={ async () => {
                 const answer = (await requestAdd({ name: Name,
                             group: DrugGroup,
                             type: Type,
                             dosage: Number(Dosage),
-                            expiration_date: ExpirationDate,
+                            expiration_date: Number((new Date(ExpirationDate)).getTime() / 86400000),
                             quantity: Number(DrugQuantity),
-                            retail_price: RetailPrice})).answer
+                            retail_price: Number(RetailPrice)})).answer 
                 alert(answer)
             }}>Add Drug</Button>
         </Stack>

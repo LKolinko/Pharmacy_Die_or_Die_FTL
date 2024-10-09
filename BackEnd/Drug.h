@@ -5,16 +5,18 @@
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
+#include <bsoncxx/types.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/stdx.hpp>
 #include <mongocxx/uri.hpp>
 
-
 #include <json/json.h>
 #include <json/value.h>
 #include <string>
 #include <fstream>
+#include <chrono>
+
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_array;
 using bsoncxx::builder::basic::make_document;
@@ -29,13 +31,13 @@ public:
         group_ = bson["group"].get_string().value;
         type_ = bson["type"].get_string().value;
         dosage_ = bson["dosage"].get_int32();
-        expiration_date_ = bson["expiration_date"].get_string().value;
+        expiration_date_ = bson["expiration_date"].get_int32().value;
         quantity_ = bson["quantity"].get_int32();
-        retail_price_ = bson["retail_price"].get_string().value;
+        retail_price_ = bson["retail_price"].get_int32().value;
     }
 
     Drug(std::string name, std::string group, std::string type, 
-    int64_t dosage, std::string expiration_date, int64_t quantity, std::string retail_price)
+    int64_t dosage, std::string expiration_date, int64_t quantity, int32_t retail_price)
     : dosage_(dosage), quantity_(quantity),
     name_(name), type_(type), group_(group),
     retail_price_(retail_price),
@@ -78,12 +80,22 @@ public:
         return doc_value;
     }
 
+    bool time_validation(int current_time) {
+        if (current_time >= expiration_date_) {
+            return false;
+        }
+        if (expiration_date_ - current_time <= 30) {
+            retail_price_ /= 2;
+        }
+        return true;
+    }
+
     friend std::istream& operator>>(std::istream& in, Drug& drug); 
     friend std::ostream& operator<<(std::ostream& out, Drug& drug);
 
-    std::string expiration_date_;
+    int32_t expiration_date_;
     std::string name_, type_, group_;
-    std::string retail_price_;
+    int32_t retail_price_;
     int32_t quantity_, dosage_;
 };
 

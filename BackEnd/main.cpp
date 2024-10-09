@@ -3,6 +3,7 @@
 
 #include <bsoncxx/builder/stream/document.hpp>
 #include <mongocxx/exception/operation_exception.hpp>
+#include <mutex>
 
 #include "Drug.h"
 
@@ -13,6 +14,7 @@ using namespace httplib;
 
 int main() {
     int64_t generatin_time = 0;
+    std::mutex data_base_mutex;
 
     Server svr;
     mongocxx::instance instance{};
@@ -27,7 +29,7 @@ int main() {
 
     auto db = client["mydb"];
     auto drugs = db["drugs"];
-    auto dlients = db["clients"];
+    auto dilers = db["clients"];
     auto orders = db["orders"];
 
     svr.Options(".*", [](const httplib::Request& req, httplib::Response& res) {
@@ -45,7 +47,8 @@ int main() {
         JSON_RESPONSE(json);
     });
 
-    svr.Get("/GetAllDrugs", [&drugs, &client](const Request& req, Response& res) {
+    svr.Get("/GetAllDrugs", [&drugs, &client, &data_base_mutex, &generatin_time](const Request& req, Response& res) {
+        std::lock_guard g(data_base_mutex);
         res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json(Json::arrayValue);
         auto session = client.start_session();
@@ -57,17 +60,19 @@ int main() {
                 d.push_back(Drug(doc));
             }
             for (auto& u : d) {
+                u.time_validation(generatin_time);
                 json.append(u.ToJson());
             }
             session.commit_transaction();
             JSON_RESPONSE(json);
-        } catch (const mongocxx::operation_exception& e) {
+        } catch (const std::runtime_error& e) {
             session.abort_transaction();
             std::cerr << e.what() << '\n';
         }
     });
 
-    svr.Post("/AddItem", [&drugs, &client](const Request& req, Response& res) {
+    svr.Post("/AddItem", [&drugs, &client, &data_base_mutex](const Request& req, Response& res) {
+        std::lock_guard g(data_base_mutex);
         res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json;
         Json::Reader reader;
@@ -77,6 +82,7 @@ int main() {
         }
         auto session = client.start_session();
         try {
+            session.start_transaction();
             Drug e(json);
             auto result = drugs.find_one(e.ToFindBson());
             if (!result) {
@@ -92,7 +98,30 @@ int main() {
                 json["answer"] = "number of drugs updated";
             }
             JSON_RESPONSE(json);
+            session.commit_transaction();
         } catch (const mongocxx::operation_exception& e) {
+            session.abort_transaction();
+            std::cerr << e.what() << '\n';
+        }
+    });
+
+    svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders](const Request& req, Response& res) {
+        std::lock_guard g(data_base_mutex);
+        res.set_header("Access-Control-Allow-Origin", "*");
+        Json::Value json;
+        Json::Reader reader;
+        reader.parse(req.body, json);
+        if (json.empty()) {
+            return;
+        }
+        auto session = client.start_session();
+        try {
+            session.start_transaction();
+            drugs.delete_many({});
+            dilers.delete_many({});
+            orders.delete_many({});
+            session.commit_transaction();
+        } catch (const std::runtime_error& e) {
             session.abort_transaction();
             std::cerr << e.what() << '\n';
         }
