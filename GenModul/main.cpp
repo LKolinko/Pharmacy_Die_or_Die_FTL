@@ -29,15 +29,15 @@ int main() {
         u.expiration_date_ = gen_quantity(rng);
         u.retail_price_ = gen_price(rng);
     }
-    std::stringstream in(user_names);
+    in = std::stringstream(user_names);
     for (std::string name; in >> name;) {
         names.push_back(name);
     }
-    std::stringstream in(user_streets);
+    in = std::stringstream(user_streets);
     for (std::string street; in >> street;) {
         streets.push_back(street);
     }
-    std::stringstream in(user_phone);
+    in = std::stringstream(user_phone);
     for (std::string phone; in >> phone;) {
         numbers.push_back(phone);
     }
@@ -74,12 +74,15 @@ int main() {
             for (int i = 0; i < k; ++i) {
                 json["drugs"].append(drugs[i].ToJson());
             }
-            auto res = cli.Post("/SetGenData", json.toStyledString(), JSON_CONTENT);
+            cli.Post("/SetGenData", json.toStyledString(), JSON_CONTENT);
+            json["answer"] = "New generation has been created";
+            JSON_RESPONSE(json);
         } catch (const std::runtime_error& e) {
+            json["answer"] = "New generation has not been created";
+            JSON_RESPONSE(json);
             std::cerr << e.what() << '\n';
         }
-        json["response"] = "OK";
-        JSON_RESPONSE(json);
+        
     });
 
     svr.Post("/NextDay", [&cli](const Request &, Response &res) {

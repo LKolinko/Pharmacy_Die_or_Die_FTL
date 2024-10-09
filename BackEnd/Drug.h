@@ -26,7 +26,7 @@ public:
 
     Drug(Json::Value json) : Drug(bsoncxx::from_json(json.toStyledString())) {}
 
-    Drug(bsoncxx::v_noabi::document::view bson) {
+    Drug(bsoncxx::v_noabi::document::view   bson) {
         name_ = bson["name"].get_string().value;
         group_ = bson["group"].get_string().value;
         type_ = bson["type"].get_string().value;
