@@ -39,7 +39,7 @@ public:
         last_ = bson["last"].get_int32().value;
         auto mas = bson["drugs"].get_array().value;
         for (auto& e : mas) {
-            drugs_.push_back(Drug(e.get_document().view()));
+            drugs_.push_back(Drug(e.get_document()));
         }
     }
 
@@ -53,20 +53,34 @@ public:
     }
 
     bsoncxx::document::value ToBson() {
-        bsoncxx::builder::stream::array drugs_bson;
-        for (auto& drug : drugs_) {
-            drugs_bson << drug.ToBson();
+        using bsoncxx::builder::stream::document;
+        using bsoncxx::builder::stream::open_array;
+        using bsoncxx::builder::stream::close_array;
+        using bsoncxx::builder::stream::finalize;
+
+        document data_builder{};
+        data_builder << "last_name" << last_name_ << "address" << address_ << "phone_number" << phone_number_
+        << "period" << period_ << "last" << last_;
+        auto array_builder = data_builder << "drugs" << open_array;
+        for (auto& u : drugs_) {
+            array_builder << u.ToBson();
         }
-        drugs_bson << bsoncxx::builder::stream::finalize;
-        auto doc_value = make_document(
-            kvp("last_name", last_name_),
-            kvp("address", address_),
-            kvp("phone_number", phone_number_),
-            kvp("period", period_),
-            kvp("last", last_),
-            kvp("drugs", drugs_bson)
-        );
-        return doc_value;
+        array_builder << close_array;
+        bsoncxx::document::value doc = data_builder << finalize;
+        std::cerr << bsoncxx::to_json(doc) << '\n';
+        return doc;
+    }
+
+    Json::Value ToOrderJson() {
+        Json::Value json;
+        json["last_name"] = last_name_;
+        json["address"] = address_;
+        json["phone_number"] = phone_number_;
+        json["drugs"] = Json::arrayValue;
+        for (auto& drug : drugs_) {
+            json["drugs"].append(drug.ToJson());
+        }
+        return json;
     }
 
     std::string address_, last_name_, phone_number_;

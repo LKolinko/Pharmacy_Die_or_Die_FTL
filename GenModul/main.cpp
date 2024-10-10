@@ -139,7 +139,7 @@ int main() {
                 req_json.append(u.ToJson());
             }
 
-            cli.Post("/NextDay", req_json.toStyledString(), JSON_CONTENT);
+            cli.Post("/AddRequests", req_json.toStyledString(), JSON_CONTENT);
 
             json["answer"] = "Next day OK";
             JSON_RESPONSE(json);

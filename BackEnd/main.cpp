@@ -134,9 +134,55 @@ int main() {
         }
     });
 
+    svr.Post("/AddRequests", [&orders, &client, &data_base_mutex](const Request& req, Response& res) {
+        std::lock_guard g(data_base_mutex);
+        Json::Value json;
+        Json::Reader reader;
+        reader.parse(req.body, json);
+        if (json.empty()) {
+            return;
+        }
+        auto session = client.start_session();
+        try {
+            session.start_transaction();
+            for (auto& u : json) {
+                Dealer client(u);
+                orders.insert_one(client.ToBson());
+            }
+            session.commit_transaction(); 
+        } catch (const std::runtime_error& e) {
+            session.abort_transaction();
+            std::cerr << e.what() << '\n';
+        }
+    });
+
+    svr.Get("/GetAllOrders", [&orders, &client, &data_base_mutex](const Request& req, Response& res) {
+        std::lock_guard g(data_base_mutex);
+        res.set_header("Access-Control-Allow-Origin", "*");
+        Json::Value json(Json::arrayValue);
+        auto session = client.start_session();
+        try {
+            session.start_transaction();
+            auto cursor_all = orders.find({});
+            std::vector<Dealer> d;
+            for (auto doc : cursor_all) {
+                d.push_back(Dealer(doc));
+            }
+            for (auto& u : d) {
+                json.append(u.ToOrderJson());
+            }
+            session.commit_transaction();
+            JSON_RESPONSE(json);
+        } catch (const std::runtime_error& e) {
+            session.abort_transaction();
+            std::cerr << e.what() << '\n';
+        }
+    });
+
     svr.Post("/NextDay", [&generatin_time](const Request& req, Response& res) {
         ++generatin_time;
         Json::Value json;
+        
         json["response"] = "OK";
         JSON_RESPONSE(json);
     });
