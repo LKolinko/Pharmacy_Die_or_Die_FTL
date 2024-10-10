@@ -140,6 +140,7 @@ int main() {
             }
 
             cli.Post("/AddRequests", req_json.toStyledString(), JSON_CONTENT);
+            cli.Get("/NextDay");
 
             json["answer"] = "Next day OK";
             JSON_RESPONSE(json);

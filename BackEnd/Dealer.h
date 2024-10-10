@@ -67,7 +67,6 @@ public:
         }
         array_builder << close_array;
         bsoncxx::document::value doc = data_builder << finalize;
-        std::cerr << bsoncxx::to_json(doc) << '\n';
         return doc;
     }
 
