@@ -36,7 +36,7 @@ public:
         address_ = bson["address"].get_string().value;
         phone_number_ = bson["phone_number"].get_string().value;
         period_ = bson["period"].get_int32().value;
-        last_ = bson["period"].get_int32().value;
+        last_ = bson["last"].get_int32().value;
         auto mas = bson["drugs"].get_array().value;
         for (auto& e : mas) {
             drugs_.push_back(Drug(e.get_document().view()));

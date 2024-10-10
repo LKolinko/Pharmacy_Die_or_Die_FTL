@@ -18,6 +18,7 @@ public:
         expiration_date_ = json["expiration_date"].asInt();
         quantity_ = json["quantity"].asInt();
         retail_price_ = json["retail_price"].asInt();
+        discounted = json["discounted"].asBool();
     }
 
     Drug(std::string name, std::string group, std::string type, 
@@ -36,6 +37,7 @@ public:
         json["expiration_date"] = expiration_date_;
         json["quantity"] = quantity_;
         json["retail_price"] = retail_price_;
+        json["discounted"] = discounted;
         return json;
     }
 
@@ -46,6 +48,7 @@ public:
     std::string name_, type_, group_;
     int32_t retail_price_;
     int32_t quantity_, dosage_;
+    bool discounted = false;
 };
 
 std::istream& operator>>(std::istream& in, Drug& drug) {

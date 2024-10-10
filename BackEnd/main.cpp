@@ -13,7 +13,7 @@ using namespace httplib;
 #define JSON_RESPONSE(json) res.set_content(json.toStyledString(), "application/json")
 
 int main() {
-    int64_t generatin_time = 0;
+    int64_t generatin_time = 0, courier;
     std::mutex data_base_mutex;
 
     Server svr;
@@ -105,7 +105,8 @@ int main() {
         }
     });
 
-    svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders, &generatin_time](const Request& req, Response& res) {
+    svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders, &generatin_time, &courier]
+    (const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         Json::Value json;
         Json::Reader reader;
@@ -120,6 +121,7 @@ int main() {
             drugs.delete_many({});
             dilers.delete_many({});
             orders.delete_many({});
+            courier = json["courier"].asInt();
             for (auto u : json["drugs"]) {
                 drugs.insert_one(Drug(u).ToBson());
             }
