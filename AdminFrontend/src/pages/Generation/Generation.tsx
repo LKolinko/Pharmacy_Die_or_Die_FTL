@@ -52,7 +52,6 @@ const Generation = () => {
     }
     return (
         <Stack spacing={3}>
-            <TextField variant="outlined" label="Days" value={days} type="number" onChange={handleDaysChange}/>
             <TextField variant="outlined" label="Drugs" value={drugs} type="number" onChange={handledrugsChange}/>
             <TextField variant="outlined" label="Couriers" value={courier} type="number" onChange={handlecourierChange}/>
             <Button variant="filled" onClick={ async () => {

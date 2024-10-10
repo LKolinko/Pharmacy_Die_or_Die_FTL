@@ -53,6 +53,11 @@ const MainDrawer: FC<DrawerProps> = (props) => {
                             <ListItemText>Generation</ListItemText>
                         </ListItemButton>
                     </ListItem>
+                    <ListItem >
+                        <ListItemButton component={Link} to='/SolveToday' selected={selectedIndex == 'SolveToday'} onClick={() => handleListItemClick('SolveToday')}>
+                            <ListItemText>Solve Today</ListItemText>
+                        </ListItemButton>
+                    </ListItem>
                 </Box>
             </List>
         </Drawer>

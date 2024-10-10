@@ -73,7 +73,6 @@ const requestGetAll = async () => {
     }
 }
 
-
 const InStock = () => {
     const [Items, setItems] = useState<DrugGroup[]>([]);
     useEffect(() => {
