@@ -81,6 +81,17 @@ public:
         return doc_value;
     }
 
+    bsoncxx::document::value ToFindOrderBson() {
+        auto doc_value = make_document(
+            kvp("name", name_),
+            kvp("group", group_),
+            kvp("type", type_),
+            kvp("dosage", dosage_),
+            kvp("expiration_date", expiration_date_)
+        );
+        return doc_value;
+    }
+
     bool time_validation(int current_time) {
         if (current_time >= expiration_date_) {
             return false;

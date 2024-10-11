@@ -219,8 +219,6 @@ int main() {
         ++generatin_time;
         Json::Value json;
         auto session = client.start_session();
-        std::cerr << "YES" << '\n';
-        std::cerr << courier << '\n';
         try {
             session.start_transaction();
 
@@ -237,13 +235,16 @@ int main() {
                 int64_t profit = 0;
                 bool is_posible = true;
                 for (auto &drug : client.drugs_) {
-                    auto drug_data_base = drugs.find_one(drug.ToFindBson());
+                    auto drug_data_base = drugs.find_one(drug.ToFindOrderBson());
                     if (drug_data_base) {
                         auto doc = drug_data_base->view();
-                        if (doc["quantity"].get_int32() >= drug.quantity_) {
-                            profit += drug.quantity_ * doc["retail_price"].get_int32() / 4;
+                        Drug doc_drug(doc);
+                        doc_drug.time_validation(generatin_time);
+                        if (doc_drug.quantity_ >= drug.quantity_) {
+                            profit += drug.quantity_ * doc_drug.retail_price_ / 4;
                         } else {
                             is_posible = false;
+                            break;
                         }
                     } else {
                         is_posible = false;
@@ -255,6 +256,7 @@ int main() {
                 }
                 ++ind;
             }
+
             std::sort(drugs_profit_ind.rbegin(), drugs_profit_ind.rend());
             int cnt = 0;
 
@@ -264,27 +266,30 @@ int main() {
                     break;
                 }
                 for (auto &drug : orders_mas[ind].drugs_) {
-                    auto drug_data_base = drugs.find_one(drug.ToFindBson());
+                    auto drug_data_base = drugs.find_one(drug.ToFindOrderBson());
                     if (drug_data_base) {
+                        auto doc = drug_data_base->view();
+                        if (doc["quantity"].get_int32() < drug.quantity_) {
+                            is_posible = false;
+                        }
+                    } else {
+                        is_posible = false;
+                    }
+                }
+                if (is_posible) {
+                    for (auto &drug : orders_mas[ind].drugs_) {
+                        auto drug_data_base = drugs.find_one(drug.ToFindOrderBson());
                         auto doc = drug_data_base->view();
                         if (doc["quantity"].get_int32() > drug.quantity_) {
                             bsoncxx::builder::stream::document update_builder;
                             update_builder << "$inc" << bsoncxx::builder::stream::open_document
                             << "quantity" << -drug.quantity_
                             << bsoncxx::builder::stream::close_document;
-
                             auto update_one_result = drugs.update_one(doc, update_builder.view());
                         } else if (doc["quantity"].get_int32() == drug.quantity_) {
                             drugs.delete_one(doc);
-                        } else {
-                            is_posible = false;
                         }
-                    } else {
-                        is_posible = false;
-                        break;
                     }
-                }
-                if (is_posible) {
                     ++cnt;
                     global_profit += profit;
                     solve_today.insert_one(orders_mas[ind].ToBson());
