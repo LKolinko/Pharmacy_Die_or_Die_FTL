@@ -59,6 +59,8 @@ int main() {
 
     std::vector<Drug> upd_req;
     svr.Post("/ReqDrugs", [&upd_req, &gen_data, &generation_time, &rng](const httplib::Request& req, httplib::Response& res) {
+        try {
+        Json::Value json;
         Json::Value input;
         Json::Reader reader;
         reader.parse(req.body, input);        
@@ -67,8 +69,23 @@ int main() {
         }
         std::uniform_int_distribution<> gen(1, 3);
         Drug drug(input);
-        drug.expiration_date_ = generation_time + gen_data(rng);
-        drug.upd_time = gen(rng);
+        bool is_upd = false;
+        for (auto &u : upd_req) {
+            if (u.name_ == drug.name_ && u.group_ == drug.group_ && u.type_ == drug.type_) {
+                is_upd = true;
+                break;
+            }
+        }
+        if (!is_upd) {
+            drug.expiration_date_ = generation_time + gen_data(rng);
+            drug.upd_time = generation_time + gen(rng);
+            upd_req.push_back(drug);
+        }
+        json["reponce"] = "OK";
+        JSON_RESPONSE(json);
+        } catch (const std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+        }
     });
 
     svr.Get("/ping", [](const auto& req, auto& res) {
@@ -108,14 +125,16 @@ int main() {
     svr.Post("/NextDay", [&cli, &rng, &names, &streets, &numbers, &generation_time, &upd_req](const Request &req, Response &res) {
         Json::Value json;
         ++generation_time;
-        try {            
-            //for (int i = 0; i < upd_req.size(); ++i) {
-            //    if (upd_req[i].upd_time == generation_time) {
-            //        cli.Post("/AddItem", upd_req[i].ToJson().toStyledString(), JSON_CONTENT);
-            //        upd_req.erase(upd_req.begin() + i);
-            //        --i;
-            //    }
-            //}
+        try {
+            std::vector<Drug> new_upd;
+            for (int i = 0; i < upd_req.size(); ++i) {
+                if (upd_req[i].upd_time == generation_time) {
+                    cli.Post("/AddItem", upd_req[i].ToJson().toStyledString(), JSON_CONTENT);
+                } else {
+                    new_upd.push_back(upd_req[i]);
+                }
+            }
+            upd_req = new_upd;
 
             std::vector<Drug> discounted_drugs, drugs;
             

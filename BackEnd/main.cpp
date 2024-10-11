@@ -5,6 +5,7 @@
 #include <mongocxx/exception/operation_exception.hpp>
 #include <mutex>
 #include <algorithm>
+#include <map>
 
 #include "Dealer.h"
 
@@ -219,6 +220,33 @@ int main() {
         ++generatin_time;
         Json::Value json;
         auto session = client.start_session();
+        try {
+            session.start_transaction();
+
+            auto all = drugs.find({});
+            Client cli("http://Getmodul:5252");
+            std::map<std::vector<std::string>, int> mp;
+            for (auto &doc : all) {
+                auto u = Drug(doc);
+                auto all_this = drugs.find(u.ToFindBsonNoData());
+                if (mp.find({ u.name_, u.type_, u.group_ }) != mp.end()) {
+                    continue;
+                }
+                mp[{ u.name_, u.type_, u.group_ }] += u.quantity_;
+                for (auto &doc_my : all_this) {
+                    mp[{ u.name_, u.type_, u.group_ }] += doc_my["quantity"].get_int32();
+                }
+                if (mp[{ u.name_, u.type_, u.group_ }] < 20) {
+                    u.quantity_ = 100;
+                    cli.Post("/ReqDrugs", u.ToJson().toStyledString(), JSON_CONTENT);
+                }
+            }
+
+
+            session.commit_transaction();
+        } catch (const std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+        }
         try {
             session.start_transaction();
 
