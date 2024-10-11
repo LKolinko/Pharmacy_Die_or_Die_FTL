@@ -48,6 +48,7 @@ public:
     std::string name_, type_, group_;
     int32_t retail_price_;
     int32_t quantity_, dosage_;
+    int32_t upd_time = 0;
     bool discounted = false;
 };
 

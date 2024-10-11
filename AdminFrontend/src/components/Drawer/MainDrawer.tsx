@@ -58,6 +58,11 @@ const MainDrawer: FC<DrawerProps> = (props) => {
                             <ListItemText>Solve Today</ListItemText>
                         </ListItemButton>
                     </ListItem>
+                    <ListItem >
+                        <ListItemButton component={Link} to='/InProgress' selected={selectedIndex == 'InProgress'} onClick={() => handleListItemClick('InProgress')}>
+                            <ListItemText>In Progress</ListItemText>
+                        </ListItemButton>
+                    </ListItem>
                 </Box>
             </List>
         </Drawer>

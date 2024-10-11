@@ -47,6 +47,8 @@ int main() {
     Client cli("http://BackEnd:8080");
     Server svr;
 
+    int32_t generation_time = 0;
+
     svr.Options(".*", [](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         res.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -55,13 +57,27 @@ int main() {
         res.set_content("", "text/plain");
     });
 
+    std::vector<Drug> upd_req;
+    svr.Post("/ReqDrugs", [&upd_req, &gen_data, &generation_time, &rng](const httplib::Request& req, httplib::Response& res) {
+        Json::Value input;
+        Json::Reader reader;
+        reader.parse(req.body, input);        
+        if (input.empty()) {
+            return;
+        }
+        std::uniform_int_distribution<> gen(1, 3);
+        Drug drug(input);
+        drug.expiration_date_ = generation_time + gen_data(rng);
+        drug.upd_time = gen(rng);
+    });
+
     svr.Get("/ping", [](const auto& req, auto& res) {
         Json::Value json;
         json["response"] = "OK";
         JSON_RESPONSE(json);
     });
 
-    svr.Post("/NewGeneration", [&cli, &drugs, &rng](const Request &req, Response &res) {
+    svr.Post("/NewGeneration", [&cli, &drugs, &rng, &generation_time, &upd_req](const Request &req, Response &res) {
         std::shuffle(drugs.begin(), drugs.end(), rng);
         Json::Value json;
         Json::Value input;
@@ -71,6 +87,8 @@ int main() {
             return;
         }
         int n = input["days"].asInt(), m = input["courier"].asInt(), k = input["drugs"].asInt();
+        generation_time = 0;
+        upd_req.clear();
         try {
             json["courier"] = m;
             json["drugs"] = Json::arrayValue;
@@ -87,9 +105,18 @@ int main() {
         }
     });
 
-    svr.Post("/NextDay", [&cli, &rng, &names, &streets, &numbers](const Request &req, Response &res) {
+    svr.Post("/NextDay", [&cli, &rng, &names, &streets, &numbers, &generation_time, &upd_req](const Request &req, Response &res) {
         Json::Value json;
+        ++generation_time;
         try {            
+            //for (int i = 0; i < upd_req.size(); ++i) {
+            //    if (upd_req[i].upd_time == generation_time) {
+            //        cli.Post("/AddItem", upd_req[i].ToJson().toStyledString(), JSON_CONTENT);
+            //        upd_req.erase(upd_req.begin() + i);
+            //        --i;
+            //    }
+            //}
+
             std::vector<Drug> discounted_drugs, drugs;
             
             auto data = cli.Get("/GetAllDrugs");

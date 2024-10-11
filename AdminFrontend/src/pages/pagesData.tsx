@@ -3,6 +3,7 @@ import ColorSystem from "./ColorSystem/ColorSystem";
 import AddItem from "./AddItem/AddItem";
 import InStock from "./InStock/InStock";
 import Generation from "./Generation/Generation";
+import InProgress from "./InProgress/InProgress";
 import SolveToday from "./SolveToday/SolveToday";
 
 const pagesData: routerType[] = [
@@ -30,6 +31,11 @@ const pagesData: routerType[] = [
         path: "SolveToday",
         element: <SolveToday />,
         title: "SolveToday"
+    },
+    {
+        path: "InProgress",
+        element: <InProgress />,
+        title: "InProgress"
     },
 ];
 
