@@ -146,7 +146,7 @@ int main() {
         }
     });
 
-    svr.Post("/AddRequests", [&orders, &client, &data_base_mutex](const Request& req, Response& res) {
+    svr.Post("/AddRequests", [&orders, &client, &data_base_mutex, &dilers, &generatin_time](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         Json::Value json;
         Json::Reader reader;
@@ -160,6 +160,19 @@ int main() {
             for (auto& u : json) {
                 Dealer client(u);
                 orders.insert_one(client.ToBson());
+
+                auto diler = dilers.find_one(client.ToFindBson());
+                if (!diler) {
+                    auto doc = diler->view();
+                    bsoncxx::builder::stream::document update_builder;
+                    update_builder << "$set" << bsoncxx::builder::stream::open_document
+                    << "last" << generatin_time 
+                    << bsoncxx::builder::stream::close_document;
+                    dilers.update_one(doc, update_builder.view());
+                } else {
+                    client.last_ = generatin_time;
+                    dilers.insert_one(client.ToDataBson());
+                }
             }
             session.commit_transaction(); 
         } catch (const std::runtime_error& e) {

@@ -35,7 +35,6 @@ public:
         last_name_ = bson["last_name"].get_string().value;
         address_ = bson["address"].get_string().value;
         phone_number_ = bson["phone_number"].get_string().value;
-        period_ = bson["period"].get_int32().value;
         last_ = bson["last"].get_int32().value;
         auto mas = bson["drugs"].get_array().value;
         for (auto& e : mas) {
@@ -59,8 +58,8 @@ public:
         using bsoncxx::builder::stream::finalize;
 
         document data_builder{};
-        data_builder << "last_name" << last_name_ << "address" << address_ << "phone_number" << phone_number_
-        << "period" << period_ << "last" << last_;
+        data_builder << "last_name" << last_name_ << "address" << address_ << "phone_number" 
+        << phone_number_ << "last" << last_;
         auto array_builder = data_builder << "drugs" << open_array;
         for (auto& u : drugs_) {
             array_builder << u.ToBson();
@@ -68,6 +67,16 @@ public:
         array_builder << close_array;
         bsoncxx::document::value doc = data_builder << finalize;
         return doc;
+    }
+
+    bsoncxx::document::value ToDataBson() {
+        auto doc_value = make_document(
+            kvp("last_name", last_name_),
+            kvp("address", address_),
+            kvp("phone_number", phone_number_),
+            kvp("last", last_)
+        );
+        return doc_value;
     }
 
     Json::Value ToOrderJson() {
@@ -83,6 +92,6 @@ public:
     }
 
     std::string address_, last_name_, phone_number_;
-    int32_t period_, last_;
+    int32_t last_;
     std::vector<Drug> drugs_;
 };
