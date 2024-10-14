@@ -83,7 +83,7 @@ int main() {
         }
         json["reponce"] = "OK";
         JSON_RESPONSE(json);
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             std::cerr << e.what() << '\n';
         }
     });
@@ -115,7 +115,7 @@ int main() {
             cli.Post("/SetGenData", json.toStyledString(), JSON_CONTENT);
             json["answer"] = "New generation has been created";
             JSON_RESPONSE(json);
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             json["answer"] = "New generation has not been created";
             JSON_RESPONSE(json);
             std::cerr << e.what() << '\n';
@@ -143,7 +143,7 @@ int main() {
             Json::Value input;
             Json::Reader reader;
             reader.parse(data->body, input);    
-            
+
             for (auto& u : input) {
                 auto drug = Drug(u);
                 if (drug.discounted) {
@@ -160,7 +160,8 @@ int main() {
             std::vector<Dealer> clients;
             
             for (int tmp = gen(rng); tmp > 0; --tmp) {
-                auto client = Dealer(names, streets, numbers);
+                Dealer client;
+                client = Dealer(names, streets, numbers);
                 for (auto &drug : discounted_drugs) {
                     if (gen_ver(rng) < 5) {
                         auto drug_req = drug;
@@ -190,9 +191,7 @@ int main() {
 
             json["answer"] = "Next day OK";
             JSON_RESPONSE(json);
-        } catch (const std::runtime_error& e) {
-            json["answer"] = "Dizdaaa";
-            JSON_RESPONSE(json);
+        } catch (std::exception& e) {
             std::cerr << e.what() << '\n';
         }
     });

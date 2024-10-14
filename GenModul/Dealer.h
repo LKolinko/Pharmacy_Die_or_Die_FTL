@@ -21,7 +21,7 @@ public:
             std::vector<std::string>& numbers) {
         std::random_device rg;
         std::mt19937 rng(rg());
-        std::uniform_int_distribution<> gen(0, names.size());
+        std::uniform_int_distribution<> gen(0, (int)names.size() - 1);
         address_ = streets[gen(rng)];
         last_name_ = names[gen(rng)];
         phone_number_ = numbers[gen(rng)];

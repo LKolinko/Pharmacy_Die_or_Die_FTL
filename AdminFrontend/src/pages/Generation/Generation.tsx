@@ -1,4 +1,5 @@
 import { Button, Stack, Typography, Box, TextField } from "@mui/material";
+import { time } from "console";
 import { useState } from "react";
 
 interface GenerationData {
@@ -23,18 +24,14 @@ const requestNewGeneration = async (data: GenerationData): Promise<any> => {
 }
 
 const requestNextDay = async (num: Number): Promise<any> => {
-    try {
-        const response = await fetch('http://0.0.0.0:5252/NextDay', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(num) || null
-        });
-        return await response.json();
-    } catch (e) {
-        console.log(e);
-    }
+    const response = await fetch('http://0.0.0.0:5252/NextDay', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(num) || null
+    });
+    return await response.json();
 }
 
 const Generation = () => {
@@ -62,10 +59,20 @@ const Generation = () => {
                 })).answer
                 alert(answer)
             }}>New Generation</Button>
+            <TextField variant="outlined" label="Days" value={days} type="number" onChange={handleDaysChange}/>
             <Button variant="filled" onClick={ async () => {
-                const answer = (await requestNextDay(1)).answer
-                alert(answer)
-            }}>Next Day</Button>
+                for (let i = 0; i < Number(days); ++i) {
+                    try {
+                        await requestNextDay(1)
+                        console.log(i + " ok")
+                    } catch (error) {
+                        console.log(error)
+                        console.log(i + " repeat")
+                        --i;
+                    }             
+                }
+                alert("solve" + days + "days")
+            }}>Solve {days} days</Button>
         </Stack>
     )
 }

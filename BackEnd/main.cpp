@@ -77,7 +77,7 @@ int main() {
             JSON_RESPONSE(json);
         } catch (const std::runtime_error& e) {
             session.abort_transaction();
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << ' ' << 1 << '\n';
         }
     });
 
@@ -111,7 +111,7 @@ int main() {
             session.commit_transaction();
         } catch (const mongocxx::operation_exception& e) {
             session.abort_transaction();
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << ' ' << 2 << '\n';
         }
     });
 
@@ -147,7 +147,7 @@ int main() {
             JSON_RESPONSE(json);
         } catch (const std::runtime_error& e) {
             session.abort_transaction();
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << ' ' << 3 << '\n';
         }
     });
 
@@ -165,7 +165,7 @@ int main() {
             }
             session.commit_transaction();
         } catch (const std::runtime_error& e) {
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << ' ' << 4 << '\n';
             session.commit_transaction();
         }
         JSON_RESPONSE(json);
@@ -202,7 +202,7 @@ int main() {
             session.commit_transaction(); 
         } catch (const std::runtime_error& e) {
             session.abort_transaction();
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << ' ' << 5 << '\n';
         }
     });
 
@@ -225,7 +225,7 @@ int main() {
             JSON_RESPONSE(json);
         } catch (const std::runtime_error& e) {
             session.abort_transaction();
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << ' ' << 6 << '\n';
         }
     });
 
@@ -248,7 +248,7 @@ int main() {
             JSON_RESPONSE(json);
         } catch (const std::runtime_error& e) {
             session.abort_transaction();
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << ' ' << 7 << '\n';
         }
     });
 
@@ -283,7 +283,7 @@ int main() {
 
             session.commit_transaction();
         } catch (const std::runtime_error& e) {
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << ' ' << 8 << '\n';
         }
         try {
             session.start_transaction();
@@ -369,8 +369,9 @@ int main() {
             session.commit_transaction();
         } catch (const std::runtime_error& e) {
             session.abort_transaction();
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << ' ' << 9 << '\n';
         }
+        std::cerr << "Solve Day № " << generatin_time << '\n';
     });
 
     svr.listen("0.0.0.0", 8080);
