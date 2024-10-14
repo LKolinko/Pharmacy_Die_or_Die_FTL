@@ -15,7 +15,7 @@ using namespace httplib;
 #define JSON_RESPONSE(json) res.set_content(json.toStyledString(), "application/json")
 
 int main() {
-    int64_t generatin_time = 0, courier = 0, global_profit = 0;
+    int32_t generatin_time = 0, courier = 0, global_profit = 0;
     std::mutex data_base_mutex;
 
     Server svr;
@@ -34,6 +34,7 @@ int main() {
     auto dilers = db["clients"];
     auto orders = db["orders"];
     auto solve_today = db["solve_today"];
+    auto total_solve = db["total_solve"];
 
     svr.Options(".*", [](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
@@ -115,7 +116,7 @@ int main() {
     });
 
     svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders, 
-    &generatin_time, &courier, &global_profit, &solve_today](const Request& req, Response& res) {
+    &generatin_time, &courier, &global_profit, &solve_today, &total_solve](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         Json::Value json;
         Json::Reader reader;
@@ -129,14 +130,18 @@ int main() {
         auto session = client.start_session();
         try {
             session.start_transaction();
+
             drugs.delete_many({});
             dilers.delete_many({});
             orders.delete_many({});
             solve_today.delete_many({});
+            total_solve.delete_many({});
+
             courier = json["courier"].asInt();
             for (auto u : json["drugs"]) {
                 drugs.insert_one(Drug(u).ToBson());
             }
+            
             session.commit_transaction();    
             json["response"] = "OK";
             JSON_RESPONSE(json);
@@ -144,6 +149,26 @@ int main() {
             session.abort_transaction();
             std::cerr << e.what() << '\n';
         }
+    });
+
+    svr.Get("/GetAllClients", [&client, &dilers, &generatin_time, &data_base_mutex](const Request& req, Response& res) {
+        std::lock_guard g(data_base_mutex);
+        Json::Value json = Json::arrayValue;
+        auto session = client.start_session();
+        try {
+            session.start_transaction();
+
+            auto all_dilers = dilers.find({});
+            for (auto diler : all_dilers) {
+                Dealer dil(diler);
+                json.append(dil.ToNameJson(generatin_time - dil.last_ <= 2));
+            }
+            session.commit_transaction();
+        } catch (const std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+            session.commit_transaction();
+        }
+        JSON_RESPONSE(json);
     });
 
     svr.Post("/AddRequests", [&orders, &client, &data_base_mutex, &dilers, &generatin_time](const Request& req, Response& res) {
@@ -162,7 +187,7 @@ int main() {
                 orders.insert_one(client.ToBson());
 
                 auto diler = dilers.find_one(client.ToFindBson());
-                if (!diler) {
+                if (diler) {
                     auto doc = diler->view();
                     bsoncxx::builder::stream::document update_builder;
                     update_builder << "$set" << bsoncxx::builder::stream::open_document
@@ -228,7 +253,7 @@ int main() {
     });
 
     svr.Get("/NextDay", [&drugs, &generatin_time, &orders, &client, &data_base_mutex, 
-    &solve_today, &global_profit, &courier](const Request& req, Response& res) {
+    &solve_today, &global_profit, &courier, &total_solve](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         ++generatin_time;
         Json::Value json;
@@ -299,7 +324,7 @@ int main() {
             }
 
             std::sort(drugs_profit_ind.rbegin(), drugs_profit_ind.rend());
-            int cnt = 0;
+            int cnt = 0, day_profit = 0;
 
             for (auto &[profit, ind] : drugs_profit_ind) {
                 bool is_posible = true;
@@ -332,11 +357,14 @@ int main() {
                         }
                     }
                     ++cnt;
-                    global_profit += profit;
+                    day_profit += profit;
                     solve_today.insert_one(orders_mas[ind].ToBson());
+                    total_solve.insert_one(orders_mas[ind].ToBson());
                     orders.delete_one(orders_mas[ind].ToBson());
                 }
             }
+
+            global_profit += day_profit;
 
             session.commit_transaction();
         } catch (const std::runtime_error& e) {

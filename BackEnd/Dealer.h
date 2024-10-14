@@ -36,9 +36,11 @@ public:
         address_ = bson["address"].get_string().value;
         phone_number_ = bson["phone_number"].get_string().value;
         last_ = bson["last"].get_int32().value;
-        auto mas = bson["drugs"].get_array().value;
-        for (auto& e : mas) {
-            drugs_.push_back(Drug(e.get_document()));
+        if (bson["drugs"]) {
+            auto mas = bson["drugs"].get_array().value;
+            for (auto& e : mas) {
+                drugs_.push_back(Drug(e.get_document()));
+            }
         }
     }
 
@@ -88,6 +90,16 @@ public:
         for (auto& drug : drugs_) {
             json["drugs"].append(drug.ToJson());
         }
+        return json;
+    }
+
+    Json::Value ToNameJson(bool is_alive) {
+        Json::Value json;
+        json["last_name"] = last_name_;
+        json["address"] = address_;
+        json["phone_number"] = phone_number_;
+        json["last"] = last_;
+        json["in_alive"] = is_alive;
         return json;
     }
 
