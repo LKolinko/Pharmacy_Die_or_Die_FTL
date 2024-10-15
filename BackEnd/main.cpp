@@ -295,8 +295,8 @@ int main() {
                 for (auto &doc_my : all_this) {
                     mp[{ u.name_, u.type_, u.group_ }] += doc_my["quantity"].get_int32();
                 }
-                if (mp[{ u.name_, u.type_, u.group_ }] < 20) {
-                    u.quantity_ = 100;
+                if (mp[{ u.name_, u.type_, u.group_ }] <= 50) {
+                    u.quantity_ = 256;
                     cli.Post("/ReqDrugs", u.ToJson().toStyledString(), JSON_CONTENT);
                 }
             }
@@ -374,6 +374,10 @@ int main() {
                             << bsoncxx::builder::stream::close_document;
                             auto update_one_result = drugs.update_one(doc, update_builder.view());
                         } else if (doc["quantity"].get_int32() == drug.quantity_) {
+                            Client cli("http://Getmodul:5252");
+                            Drug req_drug(drug);
+                            req_drug.quantity_ = 256;
+                            cli.Post("/ReqDrugs", drug.ToJson().toStyledString(), JSON_CONTENT);
                             drugs.delete_one(doc);
                         }
                     }

@@ -15,7 +15,7 @@ using namespace httplib;
 int main() {
     std::random_device rg;
     std::mt19937 rng(rg());
-    std::uniform_int_distribution<> gen_quantity(1, 100);
+    std::uniform_int_distribution<> gen_quantity(75, 500);
     std::uniform_int_distribution<> gen_price(500, 15000);
     std::uniform_int_distribution<> gen_data(1, 100);
 
@@ -158,12 +158,12 @@ int main() {
             std::uniform_int_distribution<> gen_ver(1, 10);
             
             std::vector<Dealer> clients;
-            
-            for (int tmp = gen(rng); tmp > 0; --tmp) {
+            int tmp = gen(rng);
+            while (tmp > 0) {
                 Dealer client;
                 client = Dealer(names, streets, numbers);
                 for (auto &drug : discounted_drugs) {
-                    if (gen_ver(rng) < 5) {
+                    if (gen_ver(rng) < 4) {
                         auto drug_req = drug;
                         drug_req.quantity_ = gen_cnt(rng);
                         client.add_drug(drug_req);
@@ -177,6 +177,7 @@ int main() {
                     }
                 }
                 if (!client.empty()) {
+                    --tmp;
                     clients.push_back(client);
                 }
             }
