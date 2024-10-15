@@ -3,6 +3,7 @@
 
 #include <bsoncxx/builder/stream/document.hpp>
 #include <mongocxx/exception/operation_exception.hpp>
+#include <mongocxx/pool.hpp>
 #include <mutex>
 #include <algorithm>
 #include <map>
@@ -26,15 +27,9 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    mongocxx::client client{mongocxx::uri{uri_string}};
+    mongocxx::pool pool{mongocxx::uri{uri_string}};
+    
 
-    auto db = client["mydb"];
-    auto drugs = db["drugs"];
-    auto dilers = db["clients"];
-    auto orders = db["orders"];
-    auto solve_today = db["solve_today"];
-    auto total_solve = db["total_solve"];
-    auto days_statistic = db["days_statistic"];
 
     svr.Options(".*", [](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
@@ -50,13 +45,11 @@ int main() {
         JSON_RESPONSE(json);
     });
 
-    svr.Get("/GetAllDrugs", [&drugs, &client, &generatin_time](const Request& req, Response& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
+    svr.Get("/GetAllDrugs", [&](const Request& req, Response& res) {
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
         Json::Value json(Json::arrayValue);
-        auto session = client.start_session();
         try {
-            session.start_transaction();
-
             auto cursor_all = drugs.find({});
             std::vector<Drug> d;
             for (auto doc : cursor_all) {
@@ -71,24 +64,22 @@ int main() {
                 json.append(u.ToJson());
             }
 
-            session.commit_transaction();
             JSON_RESPONSE(json);
         } catch (const std::exception& e) {
-            session.abort_transaction();
             std::cerr << e.what() << ' ' << 1 << '\n';
         }
     });
 
-    svr.Post("/AddItem", [&drugs, &client](const Request& req, Response& res) {
+    svr.Post("/AddItem", [&](const Request& req, Response& res) {
         Json::Value json;
         Json::Reader reader;
         reader.parse(req.body, json);        
         if (json.empty()) {
             return;
         }
-        auto session = client.start_session();
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
         try {
-            session.start_transaction();
             Drug e(json);
             auto result = drugs.find_one(e.ToFindBson());
             if (!result) {
@@ -104,15 +95,12 @@ int main() {
                 json["answer"] = "number of drugs updated";
             }
             JSON_RESPONSE(json);
-            session.commit_transaction();
         } catch (const mongocxx::operation_exception& e) {
-            session.abort_transaction();
             std::cerr << e.what() << ' ' << 2 << '\n';
         }
     });
 
-    svr.Post("/SetGenData", [&drugs, &client, &dilers, &orders, &days_statistic,
-    &generatin_time, &courier, &solve_today, &total_solve](const Request& req, Response& res) {
+    svr.Post("/SetGenData", [&](const Request& req, Response& res) {
         Json::Value json;
         Json::Reader reader;
         generatin_time = 0;
@@ -121,10 +109,14 @@ int main() {
             return;
         }
         courier = json["courier"].asInt();
-        auto session = client.start_session();
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
+        auto dilers = (*client)["mydb"]["clients"];
+        auto orders = (*client)["mydb"]["orders"];
+        auto solve_today = (*client)["mydb"]["solve_today"];
+        auto total_solve = (*client)["mydb"]["total_solve"];
+        auto days_statistic = (*client)["mydb"]["days_statistic"];
         try {
-            session.start_transaction();
-
             drugs.delete_many({});
             dilers.delete_many({});
             orders.delete_many({});
@@ -137,46 +129,42 @@ int main() {
                 drugs.insert_one(Drug(u).ToBson());
             }
             
-            session.commit_transaction();    
             json["response"] = "OK";
             JSON_RESPONSE(json);
         } catch (const std::exception& e) {
-            session.abort_transaction();
             std::cerr << e.what() << ' ' << 3 << '\n';
         }
     });
 
-    svr.Get("/GetAllClients", [&client, &dilers, &generatin_time](const Request& req, Response& res) {
+    svr.Get("/GetAllClients", [&](const Request& req, Response& res) {
         Json::Value json = Json::arrayValue;
-        auto session = client.start_session();
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
+        auto dilers = (*client)["mydb"]["clients"];
         try {
-            session.start_transaction();
-
             auto all_dilers = dilers.find({});
             for (auto diler : all_dilers) {
                 Dealer dil(diler);
                 json.append(dil.ToNameJson(generatin_time - dil.last_ <= 2));
             }
-            session.commit_transaction();
         } catch (const std::exception& e) {
             std::cerr << e.what() << ' ' << 4 << '\n';
-            session.commit_transaction();
         }
         JSON_RESPONSE(json);
     });
 
-    svr.Post("/AddRequests", [&orders, &client, &dilers, 
-    &generatin_time, &today_req_cnt](const Request& req, Response& res) {
+    svr.Post("/AddRequests", [&](const Request& req, Response& res) {
         Json::Value json;
         Json::Reader reader;
         reader.parse(req.body, json);
         if (json.empty()) {
             return;
         }
-        auto session = client.start_session();
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
+        auto orders = (*client)["mydb"]["orders"];
+        auto dilers = (*client)["mydb"]["clients"];
         try {
-            session.start_transaction();
-
             for (auto& u : json) {
                 Dealer client(u);
                 orders.insert_one(client.ToBson());
@@ -196,18 +184,17 @@ int main() {
                     dilers.insert_one(client.ToDataBson());
                 }
             }
-            session.commit_transaction(); 
         } catch (const std::exception& e) {
-            session.abort_transaction();
             std::cerr << e.what() << ' ' << 5 << '\n';
         }
     });
 
-    svr.Get("/GetAllOrders", [&orders, &client](const Request& req, Response& res) {
+    svr.Get("/GetAllOrders", [&](const Request& req, Response& res) {
         Json::Value json(Json::arrayValue);
-        auto session = client.start_session();
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
+        auto orders = (*client)["mydb"]["orders"];
         try {
-            session.start_transaction();
             auto cursor_all = orders.find({});
             std::vector<Dealer> d;
             for (auto doc : cursor_all) {
@@ -216,39 +203,34 @@ int main() {
             for (auto& u : d) {
                 json.append(u.ToOrderJson());
             }
-            session.commit_transaction();
             JSON_RESPONSE(json);
         } catch (const std::exception& e) {
-            session.abort_transaction();
             std::cerr << e.what() << ' ' << 6 << '\n';
         }
     });
 
-    svr.Get("/GetTotalSolve", [&total_solve, &client](const Request& req, Response& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
+    svr.Get("/GetTotalSolve", [&](const Request& req, Response& res) {
         Json::Value json(Json::arrayValue);
-        auto session = client.start_session();
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
+        auto total_solve = (*client)["mydb"]["total_solve"];
         try {
-            session.start_transaction();
-
             auto all_solve = total_solve.find({});
             for (auto &solve_req : all_solve) {
                 json.append(Dealer(solve_req).ToOrderJson());
             }
-
-            session.commit_transaction();
         } catch (const std::exception& e) {
-            session.abort_transaction();
             std::cerr << e.what() << '\n';
         }
         JSON_RESPONSE(json);
     });
 
-    svr.Get("/GetSolveToday", [&solve_today, &client](const Request& req, Response& res) {
+    svr.Get("/GetSolveToday", [&](const Request& req, Response& res) {
         Json::Value json(Json::arrayValue);
-        auto session = client.start_session();
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
+        auto solve_today = (*client)["mydb"]["solve_today"];
         try {
-            session.start_transaction();
             auto cursor_all = solve_today.find({});
             std::vector<Dealer> d;
             for (auto doc : cursor_all) {
@@ -257,21 +239,18 @@ int main() {
             for (auto& u : d) {
                 json.append(u.ToOrderJson());
             }
-            session.commit_transaction();
             JSON_RESPONSE(json);
         } catch (const std::exception& e) {
-            session.abort_transaction();
             std::cerr << e.what() << ' ' << 7 << '\n';
         }
     });
 
-    svr.Get("/GetDaysStatistic", [&client, &days_statistic](const Request& req, Response& res) {
+    svr.Get("/GetDaysStatistic", [&](const Request& req, Response& res) {
         Json::Value json(Json::arrayValue);
-        auto session = client.start_session();
-
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
+        auto days_statistic = (*client)["mydb"]["days_statistic"];
         try {
-            session.start_transaction();
-
             auto all = days_statistic.find({});
             for (auto& day : all) {
                 Json::Value day_json;
@@ -281,23 +260,22 @@ int main() {
                 day_json["cnt_req"] = day["cnt_req"].get_int32().value;
                 json.append(day_json);
             }
-
-            session.commit_transaction();
         } catch (const std::exception& e) {
-            session.abort_transaction();
             std::cerr << e.what() << '\n';
         }
         JSON_RESPONSE(json);
     });
 
-    svr.Get("/NextDay", [&drugs, &generatin_time, &orders, &client, 
-    &solve_today, &courier, &total_solve, &days_statistic, &today_req_cnt](const Request& req, Response& res) {
+    svr.Get("/NextDay", [&](const Request& req, Response& res) {
         ++generatin_time;
         Json::Value json;
-        auto session = client.start_session();
+        auto client = pool.acquire();
+        auto drugs = (*client)["mydb"]["drugs"];
+        auto solve_today = (*client)["mydb"]["solve_today"];
+        auto orders = (*client)["mydb"]["orders"];
+        auto total_solve = (*client)["mydb"]["total_solve"];
+        auto days_statistic = (*client)["mydb"]["days_statistic"];
         try {
-            session.start_transaction();
-
             auto all = drugs.find({});
             Client cli("http://Getmodul:5252");
             std::map<std::vector<std::string>, int> mp;
@@ -316,14 +294,10 @@ int main() {
                     cli.Post("/ReqDrugs", u.ToJson().toStyledString(), JSON_CONTENT);
                 }
             }
-
-            session.commit_transaction();
         } catch (const std::exception& e) {
             std::cerr << e.what() << ' ' << 8 << '\n';
         }
         try {
-            session.start_transaction();
-
             solve_today.delete_many({});
             
             auto all_orders = orders.find({});
@@ -413,10 +387,7 @@ int main() {
             days_statistic.insert_one(doc_value.view());
 
             today_req_cnt = 0;
-
-            session.commit_transaction();
         } catch (const std::exception& e) {
-            session.abort_transaction();
             std::cerr << e.what() << ' ' << 9 << '\n';
         }
         std::cerr << "Solve Day № " << generatin_time << '\n';
