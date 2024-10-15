@@ -229,6 +229,27 @@ int main() {
         }
     });
 
+    svr.Get("/GetTotalSolve", [&total_solve, &client, &data_base_mutex](const Request& req, Response& res) {
+        std::lock_guard g(data_base_mutex);
+        res.set_header("Access-Control-Allow-Origin", "*");
+        Json::Value json(Json::arrayValue);
+        auto session = client.start_session();
+        try {
+            session.start_transaction();
+
+            auto all_solve = total_solve.find({});
+            for (auto &solve_req : all_solve) {
+                json.append(Dealer(solve_req).ToOrderJson());
+            }
+
+            session.commit_transaction();
+        } catch (const std::exception& e) {
+            session.abort_transaction();
+            std::cerr << e.what() << '\n';
+        }
+        JSON_RESPONSE(json);
+    });
+
     svr.Get("/GetSolveToday", [&solve_today, &client, &data_base_mutex](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         res.set_header("Access-Control-Allow-Origin", "*");
