@@ -29,7 +29,35 @@ int main() {
 
     mongocxx::pool pool{mongocxx::uri{uri_string}};
     
-
+    std::jthread t([&]{
+        while (true) {
+            auto client = pool.acquire();
+            auto drugs = (*client)["mydb"]["drugs"];
+            try {
+                auto all = drugs.find({});
+                Client cli("http://Getmodul:5252");
+                std::map<std::vector<std::string>, int> mp;
+                for (auto &doc : all) {
+                    auto u = Drug(doc);
+                    auto all_this = drugs.find(u.ToFindBsonNoData());
+                    if (mp.find({ u.name_, u.type_, u.group_ }) != mp.end()) {
+                        continue;
+                    }
+                    mp[{ u.name_, u.type_, u.group_ }] += u.quantity_;
+                    for (auto &doc_my : all_this) {
+                        mp[{ u.name_, u.type_, u.group_ }] += doc_my["quantity"].get_int32();
+                    }
+                    if (mp[{ u.name_, u.type_, u.group_ }] <= 50) {
+                        u.quantity_ = 256;
+                        cli.Post("/ReqDrugs", u.ToJson().toStyledString(), JSON_CONTENT);
+                    }
+                }
+            } catch (const std::exception& e) {
+                std::cerr << e.what() << ' ' << 8 << '\n';
+            }
+        }
+    });
+    t.detach();
 
     svr.Options(".*", [](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
@@ -276,28 +304,6 @@ int main() {
         auto total_solve = (*client)["mydb"]["total_solve"];
         auto days_statistic = (*client)["mydb"]["days_statistic"];
         try {
-            auto all = drugs.find({});
-            Client cli("http://Getmodul:5252");
-            std::map<std::vector<std::string>, int> mp;
-            for (auto &doc : all) {
-                auto u = Drug(doc);
-                auto all_this = drugs.find(u.ToFindBsonNoData());
-                if (mp.find({ u.name_, u.type_, u.group_ }) != mp.end()) {
-                    continue;
-                }
-                mp[{ u.name_, u.type_, u.group_ }] += u.quantity_;
-                for (auto &doc_my : all_this) {
-                    mp[{ u.name_, u.type_, u.group_ }] += doc_my["quantity"].get_int32();
-                }
-                if (mp[{ u.name_, u.type_, u.group_ }] <= 50) {
-                    u.quantity_ = 256;
-                    cli.Post("/ReqDrugs", u.ToJson().toStyledString(), JSON_CONTENT);
-                }
-            }
-        } catch (const std::exception& e) {
-            std::cerr << e.what() << ' ' << 8 << '\n';
-        }
-        try {
             solve_today.delete_many({});
             
             auto all_orders = orders.find({});
@@ -306,22 +312,27 @@ int main() {
                 orders_mas.push_back(Dealer(doc));
             }
 
+            std::map<std::vector<std::string>, int> mp;
+
             std::vector<std::pair<int64_t, int>> drugs_profit_ind;
             for (int ind = 0; auto &client : orders_mas) {
                 int64_t profit = 0;
                 bool is_posible = true;
                 for (auto &drug : client.drugs_) {
-                    auto drug_data_base = drugs.find_one(drug.ToFindOrderBson());
-                    if (drug_data_base) {
-                        auto doc = drug_data_base->view();
-                        Drug doc_drug(doc);
-                        doc_drug.time_validation(generatin_time);
-                        if (doc_drug.quantity_ >= drug.quantity_) {
-                            profit += drug.quantity_ * doc_drug.retail_price_ / 4;
-                        } else {
-                            is_posible = false;
-                            break;
+                    auto drug_data_base = drugs.find(drug.ToFindOrderBson());
+                    for (auto& drug_bd : drug_data_base) {
+                        auto u = Drug(drug_bd);
+                        if (!u.time_validation(generatin_time)) {
+                            drugs.delete_one(drug_bd);
                         }
+                        if (mp.find({ u.name_, u.type_, u.group_ }) != mp.end()) {
+                            continue;
+                        }
+                        mp[{ u.name_, u.type_, u.group_ }] += u.quantity_;
+                    }
+                    if (mp[{ drug.name_, drug.type_, drug.group_ }] >= drug.quantity_) {
+                        is_posible = true;
+                        profit += drug.retail_price_ * drug.quantity_ / 4;
                     } else {
                         is_posible = false;
                         break;
@@ -342,32 +353,39 @@ int main() {
                     break;
                 }
                 for (auto &drug : orders_mas[ind].drugs_) {
-                    auto drug_data_base = drugs.find_one(drug.ToFindOrderBson());
-                    if (drug_data_base) {
-                        auto doc = drug_data_base->view();
-                        if (doc["quantity"].get_int32() < drug.quantity_) {
-                            is_posible = false;
-                        }
+                    if (mp[{ drug.name_, drug.type_, drug.group_ }] >= drug.quantity_) {
+                        is_posible = true;
                     } else {
                         is_posible = false;
                     }
                 }
                 if (is_posible) {
-                    for (auto &drug : orders_mas[ind].drugs_) {
-                        auto drug_data_base = drugs.find_one(drug.ToFindOrderBson());
-                        auto doc = drug_data_base->view();
-                        if (doc["quantity"].get_int32() > drug.quantity_) {
-                            bsoncxx::builder::stream::document update_builder;
-                            update_builder << "$inc" << bsoncxx::builder::stream::open_document
-                            << "quantity" << -drug.quantity_
-                            << bsoncxx::builder::stream::close_document;
-                            auto update_one_result = drugs.update_one(doc, update_builder.view());
-                        } else if (doc["quantity"].get_int32() == drug.quantity_) {
+                    for (auto drug : orders_mas[ind].drugs_) {
+
+                        mp[{ drug.name_, drug.type_, drug.group_ }] -= drug.quantity_;
+
+                        auto drugs_data_base = drugs.find(drug.ToFindOrderBson());
+                        for (auto &doc : drugs_data_base) {
+                            if (drug.quantity_ == 0) {
+                                break;
+                            }
+                            if (doc["quantity"].get_int32() > drug.quantity_) {
+                                bsoncxx::builder::stream::document update_builder;
+                                update_builder << "$inc" << bsoncxx::builder::stream::open_document
+                                << "quantity" << -drug.quantity_
+                                << bsoncxx::builder::stream::close_document;
+                                drug.quantity_ = 0;
+                                auto update_one_result = drugs.update_one(doc, update_builder.view());
+                            } else if (doc["quantity"].get_int32() <= drug.quantity_) {
+                                drug.quantity_ -= doc["quantity"].get_int32();
+                                drugs.delete_one(doc);
+                            }
+                        }
+                        if (mp[{ drug.name_, drug.type_, drug.group_ }] == 0) {
                             Client cli("http://Getmodul:5252");
                             Drug req_drug(drug);
                             req_drug.quantity_ = 256;
                             cli.Post("/ReqDrugs", drug.ToJson().toStyledString(), JSON_CONTENT);
-                            drugs.delete_one(doc);
                         }
                     }
                     ++cnt;

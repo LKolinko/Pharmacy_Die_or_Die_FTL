@@ -86,8 +86,7 @@ public:
             kvp("name", name_),
             kvp("group", group_),
             kvp("type", type_),
-            kvp("dosage", dosage_),
-            kvp("expiration_date", expiration_date_)
+            kvp("dosage", dosage_)
         );
         return doc_value;
     }
