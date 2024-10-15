@@ -16,7 +16,6 @@ using namespace httplib;
 
 int main() {
     int32_t generatin_time = 0, courier = 0, today_req_cnt = 0;
-    std::mutex data_base_mutex;
 
     Server svr;
     mongocxx::instance instance{};
@@ -46,14 +45,12 @@ int main() {
     });
 
     svr.Get("/ping", [](const auto& req, auto& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json;
         json["response"] = "OK";
         JSON_RESPONSE(json);
     });
 
-    svr.Get("/GetAllDrugs", [&drugs, &client, &data_base_mutex, &generatin_time](const Request& req, Response& res) {
-        std::lock_guard g(data_base_mutex);
+    svr.Get("/GetAllDrugs", [&drugs, &client, &generatin_time](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json(Json::arrayValue);
         auto session = client.start_session();
@@ -82,9 +79,7 @@ int main() {
         }
     });
 
-    svr.Post("/AddItem", [&drugs, &client, &data_base_mutex](const Request& req, Response& res) {
-        std::lock_guard g(data_base_mutex);
-        res.set_header("Access-Control-Allow-Origin", "*");
+    svr.Post("/AddItem", [&drugs, &client](const Request& req, Response& res) {
         Json::Value json;
         Json::Reader reader;
         reader.parse(req.body, json);        
@@ -116,9 +111,8 @@ int main() {
         }
     });
 
-    svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders, &days_statistic,
+    svr.Post("/SetGenData", [&drugs, &client, &dilers, &orders, &days_statistic,
     &generatin_time, &courier, &solve_today, &total_solve](const Request& req, Response& res) {
-        std::lock_guard g(data_base_mutex);
         Json::Value json;
         Json::Reader reader;
         generatin_time = 0;
@@ -152,8 +146,7 @@ int main() {
         }
     });
 
-    svr.Get("/GetAllClients", [&client, &dilers, &generatin_time, &data_base_mutex](const Request& req, Response& res) {
-        std::lock_guard g(data_base_mutex);
+    svr.Get("/GetAllClients", [&client, &dilers, &generatin_time](const Request& req, Response& res) {
         Json::Value json = Json::arrayValue;
         auto session = client.start_session();
         try {
@@ -172,9 +165,8 @@ int main() {
         JSON_RESPONSE(json);
     });
 
-    svr.Post("/AddRequests", [&orders, &client, &data_base_mutex, &dilers, 
+    svr.Post("/AddRequests", [&orders, &client, &dilers, 
     &generatin_time, &today_req_cnt](const Request& req, Response& res) {
-        std::lock_guard g(data_base_mutex);
         Json::Value json;
         Json::Reader reader;
         reader.parse(req.body, json);
@@ -211,9 +203,7 @@ int main() {
         }
     });
 
-    svr.Get("/GetAllOrders", [&orders, &client, &data_base_mutex](const Request& req, Response& res) {
-        std::lock_guard g(data_base_mutex);
-        res.set_header("Access-Control-Allow-Origin", "*");
+    svr.Get("/GetAllOrders", [&orders, &client](const Request& req, Response& res) {
         Json::Value json(Json::arrayValue);
         auto session = client.start_session();
         try {
@@ -234,8 +224,7 @@ int main() {
         }
     });
 
-    svr.Get("/GetTotalSolve", [&total_solve, &client, &data_base_mutex](const Request& req, Response& res) {
-        std::lock_guard g(data_base_mutex);
+    svr.Get("/GetTotalSolve", [&total_solve, &client](const Request& req, Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
         Json::Value json(Json::arrayValue);
         auto session = client.start_session();
@@ -255,9 +244,7 @@ int main() {
         JSON_RESPONSE(json);
     });
 
-    svr.Get("/GetSolveToday", [&solve_today, &client, &data_base_mutex](const Request& req, Response& res) {
-        std::lock_guard g(data_base_mutex);
-        res.set_header("Access-Control-Allow-Origin", "*");
+    svr.Get("/GetSolveToday", [&solve_today, &client](const Request& req, Response& res) {
         Json::Value json(Json::arrayValue);
         auto session = client.start_session();
         try {
@@ -278,7 +265,7 @@ int main() {
         }
     });
 
-    svr.Get("/GetDaysStatistic", [&client, &days_statistic, &data_base_mutex](const Request& req, Response& res) {
+    svr.Get("/GetDaysStatistic", [&client, &days_statistic](const Request& req, Response& res) {
         Json::Value json(Json::arrayValue);
         auto session = client.start_session();
 
@@ -303,9 +290,8 @@ int main() {
         JSON_RESPONSE(json);
     });
 
-    svr.Get("/NextDay", [&drugs, &generatin_time, &orders, &client, &data_base_mutex, 
+    svr.Get("/NextDay", [&drugs, &generatin_time, &orders, &client, 
     &solve_today, &courier, &total_solve, &days_statistic, &today_req_cnt](const Request& req, Response& res) {
-        std::lock_guard g(data_base_mutex);
         ++generatin_time;
         Json::Value json;
         auto session = client.start_session();

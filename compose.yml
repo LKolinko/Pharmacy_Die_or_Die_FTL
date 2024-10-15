@@ -40,7 +40,7 @@ services:
       context: ./BackEnd
       dockerfile: Dockerfile
     environment:
-      - MONGO_URI=mongodb://test:test@mongodb:27017
+      - MONGO_URI=mongodb://test:test@mongodb:27017/?minPoolSize=3&maxPoolSize=3
     ports:
       - "8080:8080"
 
