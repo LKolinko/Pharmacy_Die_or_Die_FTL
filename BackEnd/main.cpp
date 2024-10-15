@@ -116,7 +116,7 @@ int main() {
         }
     });
 
-    svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders, 
+    svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders, &days_statistic,
     &generatin_time, &courier, &solve_today, &total_solve](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         Json::Value json;
@@ -136,6 +136,7 @@ int main() {
             orders.delete_many({});
             solve_today.delete_many({});
             total_solve.delete_many({});
+            days_statistic.delete_many({});
 
             courier = json["courier"].asInt();
             for (auto u : json["drugs"]) {
@@ -184,11 +185,11 @@ int main() {
         try {
             session.start_transaction();
 
-            ++today_req_cnt;
-
             for (auto& u : json) {
                 Dealer client(u);
                 orders.insert_one(client.ToBson());
+
+                ++today_req_cnt;
 
                 auto diler = dilers.find_one(client.ToFindBson());
                 if (diler) {
@@ -277,6 +278,31 @@ int main() {
         }
     });
 
+    svr.Get("/GetDaysStatistic", [&client, &days_statistic, &data_base_mutex](const Request& req, Response& res) {
+        Json::Value json(Json::arrayValue);
+        auto session = client.start_session();
+
+        try {
+            session.start_transaction();
+
+            auto all = days_statistic.find({});
+            for (auto& day : all) {
+                Json::Value day_json;
+                day_json["number"] = day["number"].get_int32().value;
+                day_json["solve"] = day["solve"].get_int32().value;
+                day_json["profit"] = day["profit"].get_int32().value;
+                day_json["cnt_req"] = day["cnt_req"].get_int32().value;
+                json.append(day_json);
+            }
+
+            session.commit_transaction();
+        } catch (const std::exception& e) {
+            session.abort_transaction();
+            std::cerr << e.what() << '\n';
+        }
+        JSON_RESPONSE(json);
+    });
+
     svr.Get("/NextDay", [&drugs, &generatin_time, &orders, &client, &data_base_mutex, 
     &solve_today, &courier, &total_solve, &days_statistic, &today_req_cnt](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
@@ -304,7 +330,6 @@ int main() {
                     cli.Post("/ReqDrugs", u.ToJson().toStyledString(), JSON_CONTENT);
                 }
             }
-
 
             session.commit_transaction();
         } catch (const std::exception& e) {
