@@ -15,7 +15,7 @@ using namespace httplib;
 #define JSON_RESPONSE(json) res.set_content(json.toStyledString(), "application/json")
 
 int main() {
-    int32_t generatin_time = 0, courier = 0, global_profit = 0;
+    int32_t generatin_time = 0, courier = 0, today_req_cnt = 0;
     std::mutex data_base_mutex;
 
     Server svr;
@@ -35,6 +35,7 @@ int main() {
     auto orders = db["orders"];
     auto solve_today = db["solve_today"];
     auto total_solve = db["total_solve"];
+    auto days_statistic = db["days_statistic"];
 
     svr.Options(".*", [](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
@@ -75,7 +76,7 @@ int main() {
 
             session.commit_transaction();
             JSON_RESPONSE(json);
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             session.abort_transaction();
             std::cerr << e.what() << ' ' << 1 << '\n';
         }
@@ -116,12 +117,11 @@ int main() {
     });
 
     svr.Post("/SetGenData", [&drugs, &client, &data_base_mutex, &dilers, &orders, 
-    &generatin_time, &courier, &global_profit, &solve_today, &total_solve](const Request& req, Response& res) {
+    &generatin_time, &courier, &solve_today, &total_solve](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         Json::Value json;
         Json::Reader reader;
         generatin_time = 0;
-        global_profit = 0;
         reader.parse(req.body, json);
         if (json.empty()) {
             return;
@@ -145,7 +145,7 @@ int main() {
             session.commit_transaction();    
             json["response"] = "OK";
             JSON_RESPONSE(json);
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             session.abort_transaction();
             std::cerr << e.what() << ' ' << 3 << '\n';
         }
@@ -164,14 +164,15 @@ int main() {
                 json.append(dil.ToNameJson(generatin_time - dil.last_ <= 2));
             }
             session.commit_transaction();
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             std::cerr << e.what() << ' ' << 4 << '\n';
             session.commit_transaction();
         }
         JSON_RESPONSE(json);
     });
 
-    svr.Post("/AddRequests", [&orders, &client, &data_base_mutex, &dilers, &generatin_time](const Request& req, Response& res) {
+    svr.Post("/AddRequests", [&orders, &client, &data_base_mutex, &dilers, 
+    &generatin_time, &today_req_cnt](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         Json::Value json;
         Json::Reader reader;
@@ -182,6 +183,9 @@ int main() {
         auto session = client.start_session();
         try {
             session.start_transaction();
+
+            ++today_req_cnt;
+
             for (auto& u : json) {
                 Dealer client(u);
                 orders.insert_one(client.ToBson());
@@ -200,7 +204,7 @@ int main() {
                 }
             }
             session.commit_transaction(); 
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             session.abort_transaction();
             std::cerr << e.what() << ' ' << 5 << '\n';
         }
@@ -223,7 +227,7 @@ int main() {
             }
             session.commit_transaction();
             JSON_RESPONSE(json);
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             session.abort_transaction();
             std::cerr << e.what() << ' ' << 6 << '\n';
         }
@@ -267,14 +271,14 @@ int main() {
             }
             session.commit_transaction();
             JSON_RESPONSE(json);
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             session.abort_transaction();
             std::cerr << e.what() << ' ' << 7 << '\n';
         }
     });
 
     svr.Get("/NextDay", [&drugs, &generatin_time, &orders, &client, &data_base_mutex, 
-    &solve_today, &global_profit, &courier, &total_solve](const Request& req, Response& res) {
+    &solve_today, &courier, &total_solve, &days_statistic, &today_req_cnt](const Request& req, Response& res) {
         std::lock_guard g(data_base_mutex);
         ++generatin_time;
         Json::Value json;
@@ -303,7 +307,7 @@ int main() {
 
 
             session.commit_transaction();
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             std::cerr << e.what() << ' ' << 8 << '\n';
         }
         try {
@@ -389,10 +393,18 @@ int main() {
                 }
             }
 
-            global_profit += day_profit;
+            auto doc_value = make_document(
+                kvp("number", generatin_time),
+                kvp("solve", cnt),
+                kvp("profit", day_profit),
+                kvp("cnt_req", today_req_cnt)
+            );
+            days_statistic.insert_one(doc_value.view());
+
+            today_req_cnt = 0;
 
             session.commit_transaction();
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             session.abort_transaction();
             std::cerr << e.what() << ' ' << 9 << '\n';
         }
