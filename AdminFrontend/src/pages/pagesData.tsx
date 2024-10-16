@@ -5,6 +5,7 @@ import InStock from "./InStock/InStock";
 import Generation from "./Generation/Generation";
 import InProgress from "./InProgress/InProgress";
 import SolveToday from "./SolveToday/SolveToday";
+import TotalSolve from "./TotalSolve/TotalSolve";
 
 const pagesData: routerType[] = [
     {
@@ -36,6 +37,11 @@ const pagesData: routerType[] = [
         path: "InProgress",
         element: <InProgress />,
         title: "InProgress"
+    },
+    {
+        path: "TotalSolve",
+        element: <TotalSolve />,
+        title: "TotalSolve"
     },
 ];
 
