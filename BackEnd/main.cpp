@@ -324,8 +324,6 @@ int main() {
                         auto u = Drug(drug_bd);
                         if (!u.time_validation(generatin_time)) {
                             drugs.delete_one(drug_bd);
-                        }
-                        if (mp.find({ u.name_, u.type_, u.group_ }) != mp.end()) {
                             continue;
                         }
                         mp[{ u.name_, u.type_, u.group_ }] += u.quantity_;
