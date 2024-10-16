@@ -68,6 +68,11 @@ const MainDrawer: FC<DrawerProps> = (props) => {
                             <ListItemText>Total Solve</ListItemText>
                         </ListItemButton>
                     </ListItem>
+                    <ListItem >
+                        <ListItemButton component={Link} to='/DaysStatistic' selected={selectedIndex == 'DaysStatistic'} onClick={() => handleListItemClick('DaysStatistic')}>
+                            <ListItemText>Days Statistic</ListItemText>
+                        </ListItemButton>
+                    </ListItem>
                 </Box>
             </List>
         </Drawer>
