@@ -3,6 +3,8 @@
 #include <vector>
 #include <random>
 #include <sstream>
+#include <thread>
+#include <mutex>
 
 #include "Dealer.h"
 #include "Drug.h"
@@ -47,7 +49,7 @@ int main() {
     Client cli("http://BackEnd:8080");
     Server svr;
 
-    int32_t generation_time = 0;
+    std::atomic<int64_t> generation_time = 0;
 
     svr.Options(".*", [](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Access-Control-Allow-Origin", "*");
@@ -58,31 +60,34 @@ int main() {
     });
 
     std::vector<Drug> upd_req;
-    svr.Post("/ReqDrugs", [&upd_req, &gen_data, &generation_time, &rng](const httplib::Request& req, httplib::Response& res) {
+    std::mutex upd_req_mutex;
+
+    svr.Post("/ReqDrugs", [&](const httplib::Request& req, httplib::Response& res) {
         try {
-        Json::Value json;
-        Json::Value input;
-        Json::Reader reader;
-        reader.parse(req.body, input);        
-        if (input.empty()) {
-            return;
-        }
-        std::uniform_int_distribution<> gen(1, 3);
-        Drug drug(input);
-        bool is_upd = false;
-        for (auto &u : upd_req) {
-            if (u.name_ == drug.name_ && u.group_ == drug.group_ && u.type_ == drug.type_) {
-                is_upd = true;
-                break;
+            std::lock_guard g(upd_req_mutex);
+            Json::Value json;
+            Json::Value input;
+            Json::Reader reader;
+            reader.parse(req.body, input);        
+            if (input.empty()) {
+                return;
             }
-        }
-        if (!is_upd) {
-            drug.expiration_date_ = generation_time + gen_data(rng);
-            drug.upd_time = generation_time + gen(rng);
-            upd_req.push_back(drug);
-        }
-        json["reponce"] = "OK";
-        JSON_RESPONSE(json);
+            std::uniform_int_distribution<> gen(1, 3);
+            Drug drug(input);
+            bool is_upd = false;
+            for (auto &u : upd_req) {
+                if (u.name_ == drug.name_ && u.group_ == drug.group_ && u.type_ == drug.type_) {
+                    is_upd = true;
+                    break;
+                }
+            }
+            if (!is_upd) {
+                drug.expiration_date_ = generation_time + gen_data(rng);
+                drug.upd_time = generation_time + gen(rng);
+                upd_req.push_back(drug);
+            }
+            json["reponce"] = "OK";
+            JSON_RESPONSE(json);
         } catch (const std::exception& e) {
             std::cerr << e.what() << '\n';
         }
@@ -94,7 +99,7 @@ int main() {
         JSON_RESPONSE(json);
     });
 
-    svr.Post("/NewGeneration", [&cli, &drugs, &rng, &generation_time, &upd_req](const Request &req, Response &res) {
+    svr.Post("/NewGeneration", [&](const Request &req, Response &res) {
         std::shuffle(drugs.begin(), drugs.end(), rng);
         Json::Value json;
         Json::Value input;
@@ -122,20 +127,27 @@ int main() {
         }
     });
 
-    svr.Post("/NextDay", [&cli, &rng, &names, &streets, &numbers, &generation_time, &upd_req](const Request &req, Response &res) {
-        Json::Value json;
-        ++generation_time;
-        try {
-            std::vector<Drug> new_upd;
+    std::jthread t([&]{
+        while (true) {
+            try {
             for (int i = 0; i < upd_req.size(); ++i) {
                 if (upd_req[i].upd_time == generation_time) {
                     cli.Post("/AddItem", upd_req[i].ToJson().toStyledString(), JSON_CONTENT);
-                } else {
-                    new_upd.push_back(upd_req[i]);
+                    upd_req.erase(upd_req.begin() + i);
+                    --i;
                 }
             }
-            upd_req = new_upd;
+            } catch (std::exception& e) {
+                std::cerr << e.what() << '\n';
+            }
+        }
+    });
+    t.detach();
 
+    svr.Post("/NextDay", [&](const Request &req, Response &res) {
+        Json::Value json;
+        ++generation_time;
+        try {
             std::vector<Drug> discounted_drugs, drugs;
             
             auto data = cli.Get("/GetAllDrugs");
