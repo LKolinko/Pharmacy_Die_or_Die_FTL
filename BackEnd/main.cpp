@@ -87,9 +87,14 @@ int main() {
                 auto old_drug = u;
                 auto result = u.time_validation(generatin_time);
                 if (!result) {
+                    Client cli("http://Getmodul:5252");
+                    Drug req_drug(old_drug);
+                    req_drug.quantity_ = 256;
+                    cli.Post("/ReqDrugs", req_drug.ToJson().toStyledString(), JSON_CONTENT);
                     drugs.delete_one(old_drug.ToBson());
+                } else {
+                    json.append(u.ToJson());
                 }
-                json.append(u.ToJson());
             }
 
             JSON_RESPONSE(json);
@@ -324,8 +329,6 @@ int main() {
                         auto u = Drug(drug_bd);
                         if (!u.time_validation(generatin_time)) {
                             drugs.delete_one(drug_bd);
-                        }
-                        if (mp.find({ u.name_, u.type_, u.group_ }) != mp.end()) {
                             continue;
                         }
                         mp[{ u.name_, u.type_, u.group_ }] += u.quantity_;
@@ -334,6 +337,12 @@ int main() {
                         is_posible = true;
                         profit += drug.retail_price_ * drug.quantity_ / 4;
                     } else {
+                        if (mp[{ drug.name_, drug.type_, drug.group_ }] == 0) {
+                            Client cli("http://Getmodul:5252");
+                            Drug req_drug(drug);
+                            req_drug.quantity_ = 256;
+                            cli.Post("/ReqDrugs", req_drug.ToJson().toStyledString(), JSON_CONTENT);
+                        }
                         is_posible = false;
                         break;
                     }
@@ -385,7 +394,7 @@ int main() {
                             Client cli("http://Getmodul:5252");
                             Drug req_drug(drug);
                             req_drug.quantity_ = 256;
-                            cli.Post("/ReqDrugs", drug.ToJson().toStyledString(), JSON_CONTENT);
+                            cli.Post("/ReqDrugs", req_drug.ToJson().toStyledString(), JSON_CONTENT);
                         }
                     }
                     ++cnt;
