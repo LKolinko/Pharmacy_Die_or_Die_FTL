@@ -1,5 +1,4 @@
-import { Button, Stack, Typography, Box, TextField } from "@mui/material";
-import { time } from "console";
+import { Button, Stack, Typography, Box, TextField, LinearProgress } from "@mui/material";
 import { useState } from "react";
 
 interface GenerationData {
@@ -38,6 +37,7 @@ const Generation = () => {
     const [days, setdays] = useState('')
     const [drugs, setdrugs] = useState('')
     const [courier, setcourier] = useState('')
+    const [progress, setprogress] = useState(0);
     const handleDaysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setdays(event.target.value);
     }
@@ -61,7 +61,9 @@ const Generation = () => {
             }}>New Generation</Button>
             <TextField variant="outlined" label="Days" value={days} type="number" onChange={handleDaysChange}/>
             <Button variant="filled" onClick={ async () => {
+                setprogress(0);
                 for (let i = 0; i < Number(days); ++i) {
+                    setprogress((i + 1) * 100 / Number(days));
                     try {
                         await requestNextDay(1)
                         console.log(i + " ok")
@@ -71,8 +73,9 @@ const Generation = () => {
                         --i;
                     }             
                 }
-                alert("solve" + days + "days")
+                alert("solve " + days + " days")
             }}>Solve {days} days</Button>
+            <LinearProgress variant="determinate" value={progress} />
         </Stack>
     )
 }
