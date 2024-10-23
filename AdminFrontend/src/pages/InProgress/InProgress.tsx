@@ -88,13 +88,13 @@ const InProgress = () => {
             <li key={`section-${client.last_name}`}>
               <ul>
                 <Stack spacing={'1px'} direction="row" sx={useStyles().stack}>
-                    <ListItem key={`item-${client.last_name}-${client.last_name}`} sx={useStyles().cell}>
+                    <ListItem sx={useStyles().cell}>
                         <ListItemText primary={`${client.last_name}`} />
                     </ListItem>
-                    <ListItem key={`item-${client.address}-${client.address}`} sx={useStyles().cell}>
+                    <ListItem sx={useStyles().cell}>
                         <ListItemText primary={`${client.address}`} />
                     </ListItem>
-                    <ListItem key={`item-${client.phone_number}-${client.phone_number}`} sx={useStyles().cell}>
+                    <ListItem sx={useStyles().cell}>
                         <ListItemText primary={`${client.phone_number}`} />
                     </ListItem>
                 </Stack>
@@ -117,19 +117,19 @@ const InProgress = () => {
                 </Stack>
                 {client.drugs.map((drug) => (
                     <Stack spacing={'1px'} direction="row" sx={useStyles().stack}>
-                        <ListItem key={`item-${drug.name}-${drug.name}`} sx={useStyles().cell}>
+                        <ListItem sx={useStyles().cell}>
                             <ListItemText primary={`${drug.name}`} />
                         </ListItem>
-                        <ListItem key={`item-${drug.dosage}-${drug.dosage}`} sx={useStyles().cell}>
+                        <ListItem sx={useStyles().cell}>
                             <ListItemText primary={`${drug.dosage}`} />
                         </ListItem>
-                        <ListItem key={`item-${drug.quantity}-${drug.quantity}`} sx={useStyles().cell}>
+                        <ListItem sx={useStyles().cell}>
                             <ListItemText primary={`${drug.quantity}`} />
                         </ListItem>
-                        <ListItem key={`item-${drug.expiration_date}-${drug.expiration_date}`} sx={useStyles().cell}>
+                        <ListItem sx={useStyles().cell}>
                             <ListItemText primary={`${drug.expiration_date}`} />
                         </ListItem>
-                        <ListItem key={`item-${drug.retail_price}-${drug.retail_price}`} sx={useStyles().cell}>
+                        <ListItem sx={useStyles().cell}>
                             <ListItemText primary={`${drug.retail_price}`} />
                         </ListItem>
                     </Stack>

@@ -96,16 +96,16 @@ const DaysStatistic = () => {
                 <li key={`section-${day.number}`}>
                     <ul>
                         <Stack spacing={'1px'} direction="row" sx={useStyles().stack}>
-                            <ListItem key={`item-${day.number}-${day.number}`} sx={useStyles().cell}>
+                            <ListItem sx={useStyles().cell}>
                                 <ListItemText primary={`${day.number}`} />
                             </ListItem>
-                            <ListItem key={`item-${day.solve}-${day.solve}`} sx={useStyles().cell}>
+                            <ListItem sx={useStyles().cell}>
                                 <ListItemText primary={`${day.solve}`} />
                             </ListItem>
-                            <ListItem key={`item-${day.profit}-${day.profit}`} sx={useStyles().cell}>
+                            <ListItem sx={useStyles().cell}>
                                 <ListItemText primary={`${day.profit}`} />
                             </ListItem>
-                            <ListItem key={`item-${day.cnt_req}-${day.cnt_req}`} sx={useStyles().cell}>
+                            <ListItem sx={useStyles().cell}>
                                 <ListItemText primary={`${day.cnt_req}`} />
                             </ListItem>
                         </Stack>

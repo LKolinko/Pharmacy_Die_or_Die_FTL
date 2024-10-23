@@ -99,7 +99,7 @@ public:
         json["address"] = address_;
         json["phone_number"] = phone_number_;
         json["last"] = last_;
-        json["in_alive"] = is_alive;
+        json["is_alive"] = is_alive;
         return json;
     }
 

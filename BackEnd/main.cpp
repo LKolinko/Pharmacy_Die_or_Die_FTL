@@ -178,7 +178,7 @@ int main() {
             auto all_dilers = dilers.find({});
             for (auto diler : all_dilers) {
                 Dealer dil(diler);
-                json.append(dil.ToNameJson(generatin_time - dil.last_ <= 2));
+                json.append(dil.ToNameJson(generatin_time - dil.last_ <= 5));
             }
         } catch (const std::exception& e) {
             std::cerr << e.what() << ' ' << 4 << '\n';

@@ -1,4 +1,4 @@
-import { Button, Stack, Typography, Box, TextField, LinearProgress } from "@mui/material";
+import { Button, Stack, TextField, LinearProgress } from "@mui/material";
 import { useState } from "react";
 
 interface GenerationData {

@@ -7,6 +7,7 @@ import InProgress from "./InProgress/InProgress";
 import SolveToday from "./SolveToday/SolveToday";
 import TotalSolve from "./TotalSolve/TotalSolve";
 import DaysStatistic from "./DaysStatistic/DaysStatistic";
+import Clients from "./Clients/Clients";
 
 const pagesData: routerType[] = [
     {
@@ -48,6 +49,11 @@ const pagesData: routerType[] = [
         path: "DaysStatistic",
         element: <DaysStatistic />,
         title: "DaysStatistic"
+    },
+    {
+        path: "Clients",
+        element: <Clients />,
+        title: "Clients"
     },
 ];
 

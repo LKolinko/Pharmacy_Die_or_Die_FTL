@@ -134,19 +134,19 @@ const InStock = () => {
                                 </Stack>
                             {drug_type_group.data.map((drug) => (
                                 <Stack spacing={'1px'} direction="row" sx={useStyles().stack}>
-                                    <ListItem key={`item-${drug.name}-${drug.name}`} sx={useStyles().cell}>
+                                    <ListItem sx={useStyles().cell}>
                                         <ListItemText primary={`${drug.name}`} />
                                     </ListItem>
-                                    <ListItem key={`item-${drug.dosage}-${drug.dosage}`} sx={useStyles().cell}>
+                                    <ListItem sx={useStyles().cell}>
                                         <ListItemText primary={`${drug.dosage}`} />
                                     </ListItem>
-                                    <ListItem key={`item-${drug.quantity}-${drug.quantity}`} sx={useStyles().cell}>
+                                    <ListItem sx={useStyles().cell}>
                                         <ListItemText primary={`${drug.quantity}`} />
                                     </ListItem>
-                                    <ListItem key={`item-${drug.expiration_date}-${drug.expiration_date}`} sx={useStyles().cell}>
+                                    <ListItem sx={useStyles().cell}>
                                         <ListItemText primary={`${drug.expiration_date}`} />
                                     </ListItem>
-                                    <ListItem key={`item-${drug.retail_price}-${drug.retail_price}`} sx={useStyles().cell}>
+                                    <ListItem sx={useStyles().cell}>
                                         <ListItemText primary={`${drug.retail_price}`} />
                                     </ListItem>
                                 </Stack>
